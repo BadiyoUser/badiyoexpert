@@ -63,6 +63,17 @@ Deno.serve(async (req) => {
       destination: `91${digits}`,
       userName: expert.name,
       templateParams: [code],
+      // "badiyouserlogin" template has a Copy-Code URL button that needs its
+      // own parameter — without it WhatsApp silently drops the message even
+      // though AiSensy returns success:true.
+      buttons: [
+        {
+          type: "button",
+          sub_type: "url",
+          index: 0,
+          parameters: [{ type: "text", text: code }],
+        },
+      ],
     });
 
     return json({ ok: true });
