@@ -67,7 +67,7 @@ function BookingScreen() {
     queryFn: async (): Promise<Address | null> => {
       const { data, error } = await supabase
         .from("addresses")
-        .select("address_line, landmark, landmark_photo_url, latitude, longitude")
+        .select("full_address, area, city, landmark_photo_url, latitude, longitude")
         .eq("id", booking!.address_id!)
         .maybeSingle();
       if (error) throw error;
