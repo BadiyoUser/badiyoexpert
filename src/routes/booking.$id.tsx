@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ChevronLeft, MapPin, Phone, Loader2, Navigation2, X, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useExpert, useExpertSession, formatINR } from "@/lib/expert-client";
+import { useExpert, useExpertSession } from "@/lib/expert-client";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/booking/$id")({
@@ -29,8 +29,9 @@ type Booking = {
 };
 
 type Address = {
-  address_line: string | null;
-  landmark: string | null;
+  full_address: string | null;
+  area: string | null;
+  city: string | null;
   landmark_photo_url: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -66,7 +67,7 @@ function BookingScreen() {
     queryFn: async (): Promise<Address | null> => {
       const { data, error } = await supabase
         .from("addresses")
-        .select("address_line, landmark, landmark_photo_url, latitude, longitude")
+        .select("full_address, area, city, landmark_photo_url, latitude, longitude")
         .eq("id", booking!.address_id!)
         .maybeSingle();
       if (error) throw error;
@@ -114,7 +115,7 @@ function BookingScreen() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["booking", id] }),
   });
 
-  if (sessionLoading || bookingQ.isLoading) {
+  if (sessionLoading || !expert || bookingQ.isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
   if (!booking || !isMine) {
@@ -133,18 +134,17 @@ function BookingScreen() {
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <Link to="/sos" search={{ booking_id: id }} className="flex h-10 items-center gap-1 rounded-full bg-[color:var(--color-destructive)]/10 px-3 text-[13px] font-bold text-[color:var(--color-destructive)]">
-          <AlertTriangle className="h-4 w-4" /> SOS
-        </Link>
+        {booking.status === "in_progress" && (
+          <Link to="/sos" search={{ booking_id: id }} className="flex h-10 items-center gap-1 rounded-full bg-[color:var(--color-destructive)]/10 px-3 text-[13px] font-bold text-[color:var(--color-destructive)]">
+            <AlertTriangle className="h-4 w-4" /> SOS
+          </Link>
+        )}
       </header>
 
       <div className="px-6">
-        <div className="flex items-center justify-between">
-          <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-            {booking.status === "in_progress" ? "In progress" : booking.status === "completed" ? "Completed" : "New booking"}
-          </span>
-          <span className="text-[18px] font-bold text-foreground">{formatINR(booking.price)}</span>
-        </div>
+        <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+          {booking.status === "in_progress" ? "In progress" : booking.status === "completed" ? "Completed" : "New booking"}
+        </span>
         <h1 className="mt-2 text-[26px] font-bold leading-tight text-foreground">{booking.service_duration_minutes}-minute service</h1>
       </div>
 
@@ -156,9 +156,13 @@ function BookingScreen() {
             </div>
             <div className="flex-1">
               <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Customer address</p>
-              <p className="mt-1 text-[15px] font-semibold text-foreground">{addressQ.data?.address_line ?? "—"}</p>
-              {addressQ.data?.landmark && (
-                <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">Landmark: {addressQ.data.landmark}</p>
+              <p className="mt-1 text-[15px] font-semibold text-foreground">
+                {addressQ.isLoading ? "Loading…" : (addressQ.data?.full_address ?? "Address unavailable")}
+              </p>
+              {(addressQ.data?.area || addressQ.data?.city) && (
+                <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">
+                  {[addressQ.data?.area, addressQ.data?.city].filter(Boolean).join(", ")}
+                </p>
               )}
             </div>
           </div>
@@ -215,7 +219,13 @@ function AssignedControls({
 
   async function accept() {
     setErr(null);
-    try { await onEnsureCodes(); setStep("start"); } catch (e) { setErr((e as Error).message); }
+    try {
+      await onEnsureCodes();
+      setStep("start");
+    } catch (e) {
+      console.error("ensureCodes failed", e);
+      setErr("Something went wrong, please try again.");
+    }
   }
 
   async function verifyStart(e?: React.FormEvent) {
