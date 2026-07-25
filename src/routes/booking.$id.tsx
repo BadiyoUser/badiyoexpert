@@ -115,7 +115,7 @@ function BookingScreen() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["booking", id] }),
   });
 
-  if (sessionLoading || bookingQ.isLoading) {
+  if (sessionLoading || !expert || bookingQ.isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
   if (!booking || !isMine) {
