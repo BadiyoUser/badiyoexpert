@@ -219,7 +219,13 @@ function AssignedControls({
 
   async function accept() {
     setErr(null);
-    try { await onEnsureCodes(); setStep("start"); } catch (e) { setErr((e as Error).message); }
+    try {
+      await onEnsureCodes();
+      setStep("start");
+    } catch (e) {
+      console.error("ensureCodes failed", e);
+      setErr("Something went wrong, please try again.");
+    }
   }
 
   async function verifyStart(e?: React.FormEvent) {
