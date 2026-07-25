@@ -10,6 +10,7 @@ import {
   useExpertLocationTracking,
   type Coords,
 } from "@/lib/broadcast";
+import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
