@@ -56,11 +56,22 @@ function HomeDashboard() {
   }, [userId, navigate]);
 
   const online = !!expert?.is_online;
-  const locationState = useExpertLocationTracking(online);
+  const tracker = useExpertLocationTracking(online);
+  const locationState = tracker.state;
   const coordsRef = useRef<Coords | null>(null);
   useEffect(() => {
     coordsRef.current = locationState.status === "ok" ? locationState.coords : null;
   }, [locationState]);
+
+  // "Fresh" = we successfully persisted a fix within the last 2 minutes.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!online) return;
+    const t = window.setInterval(() => setNowTick(Date.now()), 15_000);
+    return () => window.clearInterval(t);
+  }, [online]);
+  const locationFresh =
+    tracker.lastPushedAt != null && nowTick - tracker.lastPushedAt < 120_000;
 
   // Broadcast radius (fetched once)
   const { data: dispatchCfg } = useQuery({
@@ -211,11 +222,19 @@ function HomeDashboard() {
 
   const toggle = useMutation({
     mutationFn: async (next: boolean) => {
+      if (next) {
+        // Capture + persist a location fix BEFORE flipping online, so a
+        // broadcast that fires during this gap still sees us as eligible.
+        await tracker.ensureFix();
+      }
       const { error } = await supabase.rpc("expert_set_online", { _online: next });
       if (error) throw error;
       return next;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expert", userId] }),
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not update your status.");
+    },
   });
 
   const acceptBroadcast = useMutation({
@@ -299,25 +318,37 @@ function HomeDashboard() {
           </button>
         </div>
 
-        {online && locationState.status === "denied" && (
-          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B45309]" />
-            <p className="text-[13px] font-semibold text-[#92400E]">
-              Location required to receive job requests. Enable location access in your browser settings.
+        {online && (
+          <div
+            className={`mt-3 flex items-start gap-2 rounded-[14px] border p-3 ${
+              locationFresh
+                ? "border-[#A7F3D0] bg-[#ECFDF5]"
+                : "border-[#FCA5A5] bg-[#FEF2F2]"
+            }`}
+          >
+            {locationFresh ? (
+              <MapPin className="mt-0.5 h-4 w-4 text-[#047857]" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B91C1C]" />
+            )}
+            <p
+              className={`text-[13px] font-semibold ${
+                locationFresh ? "text-[#065F46]" : "text-[#991B1B]"
+              }`}
+            >
+              {locationFresh
+                ? "Location active — you'll receive nearby job requests."
+                : locationState.status === "denied"
+                  ? "Location permission denied. Enable location access in your browser settings — you won't receive job requests until this is resolved."
+                  : locationState.status === "unavailable"
+                    ? `${locationState.message} — you won't receive job requests until this is resolved.`
+                    : locationState.status === "requesting"
+                      ? "Getting your location…"
+                      : "Location unavailable — you won't receive job requests until this is resolved."}
             </p>
           </div>
         )}
-        {online && locationState.status === "unavailable" && (
-          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B45309]" />
-            <p className="text-[13px] font-semibold text-[#92400E]">
-              {locationState.message} — you won't receive new bookings until this is resolved.
-            </p>
-          </div>
-        )}
-        {online && locationState.status === "requesting" && (
-          <p className="mt-3 text-[13px] text-[color:var(--text-secondary)]">Getting your location…</p>
-        )}
+
       </section>
 
       {assigned ? (

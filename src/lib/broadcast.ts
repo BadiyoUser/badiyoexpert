@@ -23,29 +23,91 @@ export type LocationState =
   | { status: "unavailable"; message: string }
   | { status: "ok"; coords: Coords; updatedAt: number };
 
+export type LocationTracker = {
+  state: LocationState;
+  lastPushedAt: number | null;
+  /**
+   * Imperatively request a fresh fix and persist it. Resolves with coords on
+   * success, or throws with a user-readable message on failure. Callers should
+   * await this before flipping the expert to Online so a booking broadcast
+   * during the toggle gap doesn't miss the expert.
+   */
+  ensureFix: () => Promise<Coords>;
+};
+
+async function pushLocation(coords: Coords): Promise<void> {
+  const { error } = await supabase.rpc("expert_update_location", {
+    p_lat: coords.lat,
+    p_lng: coords.lng,
+  });
+  if (error) {
+    console.error("[expert] expert_update_location failed", error);
+    throw new Error(error.message || "Could not save location");
+  }
+}
+
+function getCurrentPositionOnce(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      reject(new Error("Geolocation not supported on this device."));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      maximumAge: 15_000,
+      timeout: 20_000,
+    });
+  });
+}
+
 // Tracks device geolocation while `enabled` is true and pushes it to Supabase
-// every `intervalMs` (default 60s). Also pushes on every fresh reading.
-export function useExpertLocationTracking(enabled: boolean) {
+// on every fresh reading plus a 60s poll. Also exposes `ensureFix()` for the
+// caller to await a fresh persisted fix before flipping Online.
+export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   const [state, setState] = useState<LocationState>({ status: "idle" });
+  const [lastPushedAt, setLastPushedAt] = useState<number | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
-  const lastPushRef = useRef(0);
 
-  const pushToServer = useCallback(async (coords: Coords) => {
-    try {
-      await supabase.rpc("expert_update_location", {
-        p_lat: coords.lat,
-        p_lng: coords.lng,
-      });
-      lastPushRef.current = Date.now();
-    } catch {
-      // Non-fatal; next tick will retry.
-    }
+  const applyPosition = useCallback((pos: GeolocationPosition) => {
+    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    setState({ status: "ok", coords, updatedAt: Date.now() });
+    return coords;
   }, []);
+
+  const applyError = useCallback((err: GeolocationPositionError | Error) => {
+    if ("code" in err && err.code === err.PERMISSION_DENIED) {
+      setState({ status: "denied" });
+      return;
+    }
+    setState({
+      status: "unavailable",
+      message: (err as Error).message || "Location unavailable",
+    });
+  }, []);
+
+  const ensureFix = useCallback(async (): Promise<Coords> => {
+    setState((prev) => (prev.status === "ok" ? prev : { status: "requesting" }));
+    try {
+      const pos = await getCurrentPositionOnce();
+      const coords = applyPosition(pos);
+      await pushLocation(coords);
+      setLastPushedAt(Date.now());
+      return coords;
+    } catch (err) {
+      applyError(err as GeolocationPositionError | Error);
+      const message =
+        (err as GeolocationPositionError).code === 1
+          ? "Location permission denied. Enable location access to receive bookings."
+          : (err as Error).message || "Could not get your location";
+      throw new Error(message);
+    }
+  }, [applyPosition, applyError]);
 
   useEffect(() => {
     if (!enabled) {
       setState({ status: "idle" });
+      setLastPushedAt(null);
       return;
     }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -53,19 +115,18 @@ export function useExpertLocationTracking(enabled: boolean) {
       return;
     }
 
-    setState({ status: "requesting" });
     let cancelled = false;
 
     const onPosition = (pos: GeolocationPosition) => {
       if (cancelled) return;
-      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      setState({ status: "ok", coords, updatedAt: Date.now() });
-      void pushToServer(coords);
+      const coords = applyPosition(pos);
+      pushLocation(coords)
+        .then(() => setLastPushedAt(Date.now()))
+        .catch((err) => console.error("[expert] location push failed", err));
     };
     const onError = (err: GeolocationPositionError) => {
       if (cancelled) return;
-      if (err.code === err.PERMISSION_DENIED) setState({ status: "denied" });
-      else setState({ status: "unavailable", message: err.message || "Location unavailable" });
+      applyError(err);
     };
 
     const watchId = navigator.geolocation.watchPosition(onPosition, onError, {
@@ -74,8 +135,6 @@ export function useExpertLocationTracking(enabled: boolean) {
       timeout: 20_000,
     });
 
-    // Also actively poll every 60s so the server row is always fresh even
-    // if watchPosition doesn't fire (stationary device).
     const interval = window.setInterval(() => {
       navigator.geolocation.getCurrentPosition(onPosition, onError, {
         enableHighAccuracy: true,
@@ -89,9 +148,9 @@ export function useExpertLocationTracking(enabled: boolean) {
       navigator.geolocation.clearWatch(watchId);
       window.clearInterval(interval);
     };
-  }, [enabled, pushToServer]);
+  }, [enabled, applyPosition, applyError]);
 
-  return state;
+  return { state, lastPushedAt, ensureFix };
 }
 
 // -----------------------------------------------------------------------------
