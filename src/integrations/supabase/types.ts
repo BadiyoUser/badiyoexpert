@@ -1084,6 +1084,7 @@ export type Database = {
         Returns: undefined
       }
       expert_set_online: { Args: { _online: boolean }; Returns: undefined }
+      expert_update_photo_url: { Args: { _url: string }; Returns: undefined }
       expert_verify_end_otp: {
         Args: { _booking_id: string; _otp: string }
         Returns: number

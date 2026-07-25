@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ChevronLeft, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2 } from "lucide-react";
+import { ChevronLeft, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera } from "lucide-react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useExpert, useExpertSession, initials } from "@/lib/expert-client";
 
 export const Route = createFileRoute("/profile")({
@@ -17,10 +19,50 @@ function ProfileScreen() {
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function logout() {
     await supabase.auth.signOut();
     navigate({ to: "/login" });
+  }
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !userId) return;
+    setError(null);
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${userId}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("expert-avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      // Private bucket → long-lived signed URL (10 years)
+      const { data: signed, error: sErr } = await supabase.storage
+        .from("expert-avatars")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (sErr || !signed?.signedUrl) throw sErr ?? new Error("Could not create URL");
+      const { error: rpcErr } = await supabase.rpc("expert_update_photo_url", { _url: signed.signedUrl });
+      if (rpcErr) throw rpcErr;
+      await qc.invalidateQueries({ queryKey: ["expert", userId] });
+    } catch (err) {
+      setError((err as Error).message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -35,14 +77,41 @@ function ProfileScreen() {
       </header>
 
       <section className="flex flex-col items-center px-6 text-center">
-        {expert?.photo_url ? (
-          <img src={expert.photo_url} alt={expert.name ?? ""} className="h-24 w-24 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[color:var(--color-charcoal)] text-3xl font-bold text-white">
-            {initials(expert?.name)}
-          </div>
-        )}
-        <h2 className="mt-4 text-[22px] font-bold text-foreground">{expert?.name ?? "—"}</h2>
+        <div className="relative">
+          {expert?.photo_url ? (
+            <img src={expert.photo_url} alt={expert.name ?? ""} className="h-24 w-24 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[color:var(--color-charcoal)] text-3xl font-bold text-white">
+              {initials(expert?.name)}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            aria-label="Change profile photo"
+            className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-md ring-4 ring-background disabled:opacity-60"
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPickFile}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="mt-3 text-[13px] font-semibold text-primary disabled:opacity-60"
+        >
+          {uploading ? "Uploading…" : expert?.photo_url ? "Change photo" : "Upload photo"}
+        </button>
+        {error && <p className="mt-1 text-[12px] text-red-600">{error}</p>}
+        <h2 className="mt-3 text-[22px] font-bold text-foreground">{expert?.name ?? "—"}</h2>
         <p className="text-[13px] text-[color:var(--text-secondary)]">+91 {expert?.phone}</p>
       </section>
 
