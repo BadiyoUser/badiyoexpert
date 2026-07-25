@@ -78,7 +78,7 @@ function BookingScreen() {
     queryKey: ["customer", booking?.user_id],
     enabled: !!booking?.user_id && !!isMine,
     queryFn: async () => {
-      const { data } = await supabase.from("users").select("full_name, phone_number").eq("id", booking!.user_id).maybeSingle();
+      const { data } = await supabase.from("users").select("full_name, phone").eq("id", booking!.user_id).maybeSingle();
       return data;
     },
   });
