@@ -50,6 +50,11 @@ function HomeDashboard() {
   const qc = useQueryClient();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!userId) return;
+    void initExpertPush((opts) => navigate(opts as Parameters<typeof navigate>[0]));
+  }, [userId, navigate]);
+
   const online = !!expert?.is_online;
   const locationState = useExpertLocationTracking(online);
   const coordsRef = useRef<Coords | null>(null);
