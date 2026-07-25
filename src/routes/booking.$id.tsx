@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ChevronLeft, MapPin, Phone, Loader2, Navigation2, X, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useExpert, useExpertSession, formatINR } from "@/lib/expert-client";
+import { useExpert, useExpertSession } from "@/lib/expert-client";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/booking/$id")({
