@@ -318,25 +318,37 @@ function HomeDashboard() {
           </button>
         </div>
 
-        {online && locationState.status === "denied" && (
-          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B45309]" />
-            <p className="text-[13px] font-semibold text-[#92400E]">
-              Location required to receive job requests. Enable location access in your browser settings.
+        {online && (
+          <div
+            className={`mt-3 flex items-start gap-2 rounded-[14px] border p-3 ${
+              locationFresh
+                ? "border-[#A7F3D0] bg-[#ECFDF5]"
+                : "border-[#FCA5A5] bg-[#FEF2F2]"
+            }`}
+          >
+            {locationFresh ? (
+              <MapPin className="mt-0.5 h-4 w-4 text-[#047857]" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B91C1C]" />
+            )}
+            <p
+              className={`text-[13px] font-semibold ${
+                locationFresh ? "text-[#065F46]" : "text-[#991B1B]"
+              }`}
+            >
+              {locationFresh
+                ? "Location active — you'll receive nearby job requests."
+                : locationState.status === "denied"
+                  ? "Location permission denied. Enable location access in your browser settings — you won't receive job requests until this is resolved."
+                  : locationState.status === "unavailable"
+                    ? `${locationState.message} — you won't receive job requests until this is resolved.`
+                    : locationState.status === "requesting"
+                      ? "Getting your location…"
+                      : "Location unavailable — you won't receive job requests until this is resolved."}
             </p>
           </div>
         )}
-        {online && locationState.status === "unavailable" && (
-          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B45309]" />
-            <p className="text-[13px] font-semibold text-[#92400E]">
-              {locationState.message} — you won't receive new bookings until this is resolved.
-            </p>
-          </div>
-        )}
-        {online && locationState.status === "requesting" && (
-          <p className="mt-3 text-[13px] text-[color:var(--text-secondary)]">Getting your location…</p>
-        )}
+
       </section>
 
       {assigned ? (
