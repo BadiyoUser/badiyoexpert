@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OtpRouteImport } from './routes/otp'
+import { Route as NotRegisteredRouteImport } from './routes/not-registered'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const OtpRoute = OtpRouteImport.update({
   id: '/otp',
   path: '/otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotRegisteredRoute = NotRegisteredRouteImport.update({
+  id: '/not-registered',
+  path: '/not-registered',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/not-registered': typeof NotRegisteredRoute
   '/otp': typeof OtpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/not-registered': typeof NotRegisteredRoute
   '/otp': typeof OtpRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/not-registered': typeof NotRegisteredRoute
   '/otp': typeof OtpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/home' | '/login' | '/otp'
+  fullPaths: '/' | '/home' | '/login' | '/not-registered' | '/otp'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/home' | '/login' | '/otp'
-  id: '__root__' | '/' | '/home' | '/login' | '/otp'
+  to: '/' | '/home' | '/login' | '/not-registered' | '/otp'
+  id: '__root__' | '/' | '/home' | '/login' | '/not-registered' | '/otp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
+  NotRegisteredRoute: typeof NotRegisteredRoute
   OtpRoute: typeof OtpRoute
 }
 
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/otp'
       fullPath: '/otp'
       preLoaderRoute: typeof OtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/not-registered': {
+      id: '/not-registered'
+      path: '/not-registered'
+      fullPath: '/not-registered'
+      preLoaderRoute: typeof NotRegisteredRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
+  NotRegisteredRoute: NotRegisteredRoute,
   OtpRoute: OtpRoute,
 }
 export const routeTree = rootRouteImport
