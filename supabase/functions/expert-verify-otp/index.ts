@@ -27,25 +27,23 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Dev bypass: "0000" always verifies (preview/testing only).
-    if (otp !== "0000") {
-      // Verify code
-      const { data: rows, error: qErr } = await admin
-        .from("otp_codes")
-        .select("id, code, is_verified, expires_at")
-        .eq("phone", digits)
-        .eq("is_verified", false)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (qErr) throw qErr;
-      const record = rows?.[0];
-      if (!record) return json({ error: "Code expired. Request a new one." }, { status: 400 });
-      if (new Date(record.expires_at).getTime() < Date.now())
-        return json({ error: "Code expired. Request a new one." }, { status: 400 });
-      if (record.code !== otp) return json({ error: "Invalid code" }, { status: 400 });
+    // Verify code against the most recent unverified record for this phone.
+    const { data: rows, error: qErr } = await admin
+      .from("otp_codes")
+      .select("id, code, is_verified, expires_at")
+      .eq("phone", digits)
+      .eq("is_verified", false)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (qErr) throw qErr;
+    const record = rows?.[0];
+    if (!record) return json({ error: "Code expired. Request a new one." }, { status: 400 });
+    if (new Date(record.expires_at).getTime() < Date.now())
+      return json({ error: "Code expired. Request a new one." }, { status: 400 });
+    if (record.code !== otp) return json({ error: "Invalid code" }, { status: 400 });
 
-      await admin.from("otp_codes").update({ is_verified: true }).eq("id", record.id);
-    }
+    await admin.from("otp_codes").update({ is_verified: true }).eq("id", record.id);
+
 
     // Find expert
     const { data: experts, error: expErr } = await admin
