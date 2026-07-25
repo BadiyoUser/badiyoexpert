@@ -228,6 +228,8 @@ export type Database = {
         Row: {
           address_id: string | null
           assigned_expert_id: string | null
+          booking_lat: number | null
+          booking_lng: number | null
           cancellation_reason: string | null
           created_at: string | null
           delete_reason: string | null
@@ -256,6 +258,8 @@ export type Database = {
         Insert: {
           address_id?: string | null
           assigned_expert_id?: string | null
+          booking_lat?: number | null
+          booking_lng?: number | null
           cancellation_reason?: string | null
           created_at?: string | null
           delete_reason?: string | null
@@ -284,6 +288,8 @@ export type Database = {
         Update: {
           address_id?: string | null
           assigned_expert_id?: string | null
+          booking_lat?: number | null
+          booking_lng?: number | null
           cancellation_reason?: string | null
           created_at?: string | null
           delete_reason?: string | null
@@ -321,6 +327,13 @@ export type Database = {
             foreignKeyName: "bookings_assigned_expert_id_fkey"
             columns: ["assigned_expert_id"]
             isOneToOne: false
+            referencedRelation: "assigned_expert_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_assigned_expert_id_fkey"
+            columns: ["assigned_expert_id"]
+            isOneToOne: false
             referencedRelation: "experts"
             referencedColumns: ["id"]
           },
@@ -339,6 +352,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      dispatch_config: {
+        Row: {
+          broadcast_radius_km: number
+          broadcast_timeout_seconds: number
+          city: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          broadcast_radius_km?: number
+          broadcast_timeout_seconds?: number
+          city?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          broadcast_radius_km?: number
+          broadcast_timeout_seconds?: number
+          city?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       emergency_alerts: {
         Row: {
@@ -389,6 +429,13 @@ export type Database = {
             foreignKeyName: "emergency_alerts_expert_id_fkey"
             columns: ["expert_id"]
             isOneToOne: false
+            referencedRelation: "assigned_expert_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_alerts_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
             referencedRelation: "experts"
             referencedColumns: ["id"]
           },
@@ -432,6 +479,8 @@ export type Database = {
           bank_account_number: string | null
           bank_ifsc: string | null
           created_at: string
+          current_lat: number | null
+          current_lng: number | null
           id: string
           is_online: boolean
           kyc_aadhaar_url: string | null
@@ -440,6 +489,7 @@ export type Database = {
           kyc_rejection_reason: string | null
           kyc_status: string
           level: string
+          location_updated_at: string | null
           name: string
           phone: string
           photo_url: string | null
@@ -455,6 +505,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_ifsc?: string | null
           created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
           id?: string
           is_online?: boolean
           kyc_aadhaar_url?: string | null
@@ -463,6 +515,7 @@ export type Database = {
           kyc_rejection_reason?: string | null
           kyc_status?: string
           level?: string
+          location_updated_at?: string | null
           name: string
           phone: string
           photo_url?: string | null
@@ -478,6 +531,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_ifsc?: string | null
           created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
           id?: string
           is_online?: boolean
           kyc_aadhaar_url?: string | null
@@ -486,6 +541,7 @@ export type Database = {
           kyc_rejection_reason?: string | null
           kyc_status?: string
           level?: string
+          location_updated_at?: string | null
           name?: string
           phone?: string
           photo_url?: string | null
@@ -1056,7 +1112,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      assigned_expert_public: {
+        Row: {
+          id: string | null
+          level: string | null
+          name: string | null
+          phone: string | null
+          photo_url: string | null
+          status: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          status?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          status?: string | null
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experts_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       advance_booking_status: {
@@ -1105,6 +1198,10 @@ export type Database = {
       get_auth_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_auth_user_id_by_phone: { Args: { _phone: string }; Returns: string }
       get_expert_id_for_auth: { Args: { _auth_uid: string }; Returns: string }
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
       is_active_staff: {
         Args: { _roles: string[]; _uid: string }
         Returns: boolean
