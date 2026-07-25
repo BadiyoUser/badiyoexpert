@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronLeft, Phone } from "lucide-react";
+import { ChevronLeft, Phone, Loader2 } from "lucide-react";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
+import { expertApi } from "@/lib/expert-client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in — Badiyo Expert" },
-      { name: "description", content: "Sign in to Badiyo Expert with your mobile number." },
+      { name: "description", content: "Sign in to Badiyo Expert with your registered mobile number." },
     ],
   }),
   component: LoginScreen,
@@ -15,34 +16,46 @@ export const Route = createFileRoute("/login")({
 
 function LoginScreen() {
   const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const valid = phone.replace(/\D/g, "").length >= 8;
+  const digits = phone.replace(/\D/g, "").slice(-10);
+  const valid = digits.length === 10;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!valid || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await expertApi.sendOtp(digits);
+      navigate({ to: "/otp", search: { phone: digits } });
+    } catch (err) {
+      const msg = (err as Error).message ?? "Failed to send code";
+      if (msg.includes("NOT_REGISTERED")) {
+        navigate({ to: "/not-registered" });
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
       <div className="flex items-center justify-center py-8">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-10 w-auto" />
       </div>
-
       <div className="mt-4">
-        <h1 className="text-[28px] font-bold leading-tight text-foreground">
-          Welcome, Expert
-        </h1>
+        <h1 className="text-[28px] font-bold leading-tight text-foreground">Welcome, Expert</h1>
         <p className="mt-2 text-[15px] text-[color:var(--text-secondary)]">
-          Enter your mobile number to continue. We'll send you a 4-digit code.
+          Enter your registered mobile number. We'll send a 4-digit code on WhatsApp.
         </p>
       </div>
 
-      <form
-        className="mt-8 flex flex-1 flex-col"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (valid) navigate({ to: "/otp" });
-        }}
-      >
-        <label className="text-[13px] font-semibold text-foreground">
-          Mobile number
-        </label>
+      <form className="mt-8 flex flex-1 flex-col" onSubmit={submit}>
+        <label className="text-[13px] font-semibold text-foreground">Mobile number</label>
         <div className="mt-2 flex items-center gap-2 rounded-[14px] border border-border bg-card px-4 h-[52px] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
           <Phone className="h-5 w-5 text-[color:var(--text-secondary)]" strokeWidth={2} />
           <span className="text-[15px] font-semibold text-foreground">+91</span>
@@ -58,22 +71,22 @@ function LoginScreen() {
           />
         </div>
 
+        {error && <p className="mt-3 text-[13px] font-semibold text-[color:var(--color-destructive)]">{error}</p>}
+
         <p className="mt-4 text-[13px] text-[color:var(--text-secondary)]">
-          By continuing you agree to Badiyo's Terms of Service and Privacy Policy.
+          Only registered Badiyo Experts can sign in. By continuing you agree to Badiyo's Terms and Privacy Policy.
         </p>
 
         <div className="mt-auto pt-8">
           <button
             type="submit"
-            disabled={!valid}
-            className="h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
+            disabled={!valid || loading}
+            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
           >
-            Send code
+            {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+            {loading ? "Sending…" : "Send code"}
           </button>
-          <Link
-            to="/"
-            className="mt-4 flex items-center justify-center gap-1 text-[14px] font-semibold text-[color:var(--text-secondary)]"
-          >
+          <Link to="/" className="mt-4 flex items-center justify-center gap-1 text-[14px] font-semibold text-[color:var(--text-secondary)]">
             <ChevronLeft className="h-4 w-4" /> Back
           </Link>
         </div>
