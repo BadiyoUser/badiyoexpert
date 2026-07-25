@@ -77,17 +77,16 @@ function HomeDashboard() {
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background pb-6">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-7 w-auto" />
-        <div className="flex items-center gap-3">
-          <Link to="/sos" className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--color-destructive)]/10 text-[color:var(--color-destructive)]" aria-label="SOS">
-            <AlertTriangle className="h-5 w-5" strokeWidth={2.2} />
-          </Link>
-          <Link to="/profile" className="flex items-center gap-2 rounded-full bg-card border border-border py-1.5 pl-1.5 pr-3">
+        <Link to="/profile" className="flex items-center gap-2 rounded-full bg-card border border-border py-1.5 pl-1.5 pr-3" aria-label="Profile">
+          {expert?.photo_url ? (
+            <img src={expert.photo_url} alt={expert.name ?? "Expert"} className="h-8 w-8 rounded-full object-cover" />
+          ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--color-charcoal)] text-[13px] font-bold text-white">
               {initials(expert?.name)}
             </div>
-            <span className="text-[13px] font-semibold text-foreground">{expert?.name?.split(" ")[0] ?? "Expert"}</span>
-          </Link>
-        </div>
+          )}
+          <span className="text-[13px] font-semibold text-foreground">{expert?.name?.split(" ")[0] ?? "Expert"}</span>
+        </Link>
       </header>
 
       <section className="px-6">
