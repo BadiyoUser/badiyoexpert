@@ -56,11 +56,22 @@ function HomeDashboard() {
   }, [userId, navigate]);
 
   const online = !!expert?.is_online;
-  const locationState = useExpertLocationTracking(online);
+  const tracker = useExpertLocationTracking(online);
+  const locationState = tracker.state;
   const coordsRef = useRef<Coords | null>(null);
   useEffect(() => {
     coordsRef.current = locationState.status === "ok" ? locationState.coords : null;
   }, [locationState]);
+
+  // "Fresh" = we successfully persisted a fix within the last 2 minutes.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!online) return;
+    const t = window.setInterval(() => setNowTick(Date.now()), 15_000);
+    return () => window.clearInterval(t);
+  }, [online]);
+  const locationFresh =
+    tracker.lastPushedAt != null && nowTick - tracker.lastPushedAt < 120_000;
 
   // Broadcast radius (fetched once)
   const { data: dispatchCfg } = useQuery({
