@@ -214,7 +214,11 @@ function HomeDashboard() {
 
   const acceptBroadcast = useMutation({
     mutationFn: async (bookingId: string) => {
-      const { error } = await supabase.rpc("claim_booking_as_expert", { p_booking_id: bookingId });
+      if (!expert?.id) throw new Error("Expert profile unavailable");
+      const { error } = await supabase.rpc("claim_booking_as_expert", {
+        _booking_id: bookingId,
+        _expert_id: expert.id,
+      });
       if (error) throw error;
       return bookingId;
     },
