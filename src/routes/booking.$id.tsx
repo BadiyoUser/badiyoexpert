@@ -134,18 +134,17 @@ function BookingScreen() {
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <Link to="/sos" search={{ booking_id: id }} className="flex h-10 items-center gap-1 rounded-full bg-[color:var(--color-destructive)]/10 px-3 text-[13px] font-bold text-[color:var(--color-destructive)]">
-          <AlertTriangle className="h-4 w-4" /> SOS
-        </Link>
+        {booking.status === "in_progress" && (
+          <Link to="/sos" search={{ booking_id: id }} className="flex h-10 items-center gap-1 rounded-full bg-[color:var(--color-destructive)]/10 px-3 text-[13px] font-bold text-[color:var(--color-destructive)]">
+            <AlertTriangle className="h-4 w-4" /> SOS
+          </Link>
+        )}
       </header>
 
       <div className="px-6">
-        <div className="flex items-center justify-between">
-          <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-            {booking.status === "in_progress" ? "In progress" : booking.status === "completed" ? "Completed" : "New booking"}
-          </span>
-          <span className="text-[18px] font-bold text-foreground">{formatINR(booking.price)}</span>
-        </div>
+        <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+          {booking.status === "in_progress" ? "In progress" : booking.status === "completed" ? "Completed" : "New booking"}
+        </span>
         <h1 className="mt-2 text-[26px] font-bold leading-tight text-foreground">{booking.service_duration_minutes}-minute service</h1>
       </div>
 
@@ -157,9 +156,13 @@ function BookingScreen() {
             </div>
             <div className="flex-1">
               <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Customer address</p>
-              <p className="mt-1 text-[15px] font-semibold text-foreground">{addressQ.data?.address_line ?? "—"}</p>
-              {addressQ.data?.landmark && (
-                <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">Landmark: {addressQ.data.landmark}</p>
+              <p className="mt-1 text-[15px] font-semibold text-foreground">
+                {addressQ.isLoading ? "Loading…" : (addressQ.data?.full_address ?? "Address unavailable")}
+              </p>
+              {(addressQ.data?.area || addressQ.data?.city) && (
+                <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">
+                  {[addressQ.data?.area, addressQ.data?.city].filter(Boolean).join(", ")}
+                </p>
               )}
             </div>
           </div>
