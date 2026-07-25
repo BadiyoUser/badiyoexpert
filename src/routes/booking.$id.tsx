@@ -29,8 +29,9 @@ type Booking = {
 };
 
 type Address = {
-  address_line: string | null;
-  landmark: string | null;
+  full_address: string | null;
+  area: string | null;
+  city: string | null;
   landmark_photo_url: string | null;
   latitude: number | null;
   longitude: number | null;
