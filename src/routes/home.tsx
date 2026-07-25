@@ -1,10 +1,18 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Inbox, MapPin, Loader2, Wallet, History, Award, LifeBuoy } from "lucide-react";
+import { Inbox, MapPin, Loader2, Wallet, History, Award, LifeBuoy, Clock, X, AlertTriangle } from "lucide-react";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpert, useExpertSession, initials, formatINR } from "@/lib/expert-client";
+import {
+  haversineKm,
+  startNotificationLoop,
+  stopAllNotificationLoops,
+  useExpertLocationTracking,
+  type Coords,
+} from "@/lib/broadcast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -16,13 +24,151 @@ export const Route = createFileRoute("/home")({
   component: HomeDashboard,
 });
 
+type BroadcastBooking = {
+  id: string;
+  status: string;
+  service_duration_minutes: number | null;
+  scheduled_time_slot: string | null;
+  slot_type: string | null;
+  address_id: string | null;
+  booking_lat: number | null;
+  booking_lng: number | null;
+  assigned_expert_id: string | null;
+};
+
+type BroadcastCandidate = {
+  booking: BroadcastBooking;
+  address: { full_address: string | null; area: string | null; city: string | null } | null;
+  distanceKm: number;
+  soundHandle: { stop: () => void };
+};
+
 function HomeDashboard() {
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
-  // Real-time subscription to my assigned bookings
+  const online = !!expert?.is_online;
+  const locationState = useExpertLocationTracking(online);
+  const coordsRef = useRef<Coords | null>(null);
+  useEffect(() => {
+    coordsRef.current = locationState.status === "ok" ? locationState.coords : null;
+  }, [locationState]);
+
+  // Broadcast radius (fetched once)
+  const { data: dispatchCfg } = useQuery({
+    queryKey: ["dispatch-config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dispatch_config")
+        .select("broadcast_radius_km")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const radiusKm = Number(dispatchCfg?.broadcast_radius_km ?? 5);
+
+  // Broadcast queue
+  const [candidates, setCandidates] = useState<BroadcastCandidate[]>([]);
+  const candidatesRef = useRef(candidates);
+  candidatesRef.current = candidates;
+  const dismissedRef = useRef<Set<string>>(new Set());
+
+  const removeCandidate = useCallback((bookingId: string) => {
+    setCandidates((prev) => {
+      const target = prev.find((c) => c.booking.id === bookingId);
+      target?.soundHandle.stop();
+      return prev.filter((c) => c.booking.id !== bookingId);
+    });
+  }, []);
+
+  const dismissCandidate = useCallback((bookingId: string) => {
+    dismissedRef.current.add(bookingId);
+    removeCandidate(bookingId);
+  }, [removeCandidate]);
+
+  const evaluateBooking = useCallback(
+    async (booking: BroadcastBooking) => {
+      if (!online) return;
+      if (dismissedRef.current.has(booking.id)) return;
+      if (candidatesRef.current.some((c) => c.booking.id === booking.id)) return;
+      if (booking.assigned_expert_id) return;
+      if (booking.status !== "accepted") return;
+      const myCoords = coordsRef.current;
+      if (!myCoords) return;
+      if (booking.booking_lat == null || booking.booking_lng == null) return;
+      const distanceKm = haversineKm(myCoords, {
+        lat: Number(booking.booking_lat),
+        lng: Number(booking.booking_lng),
+      });
+      if (distanceKm > radiusKm) return;
+
+      let address: BroadcastCandidate["address"] = null;
+      if (booking.address_id) {
+        const { data } = await supabase
+          .from("addresses")
+          .select("full_address, area, city")
+          .eq("id", booking.address_id)
+          .maybeSingle();
+        address = data ?? null;
+      }
+      const soundHandle = startNotificationLoop();
+      setCandidates((prev) => {
+        if (prev.some((c) => c.booking.id === booking.id)) {
+          soundHandle.stop();
+          return prev;
+        }
+        return [...prev, { booking, address, distanceKm, soundHandle }];
+      });
+    },
+    [online, radiusKm],
+  );
+
+  // Subscribe to broadcast events while online
+  useEffect(() => {
+    if (!online || !expert?.id) return;
+    const ch = supabase
+      .channel(`expert-${expert.id}-broadcast`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bookings" },
+        (payload) => {
+          void evaluateBooking(payload.new as BroadcastBooking);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "bookings" },
+        (payload) => {
+          const row = payload.new as BroadcastBooking;
+          const existing = candidatesRef.current.find((c) => c.booking.id === row.id);
+          if (existing && row.assigned_expert_id) {
+            removeCandidate(row.id);
+            toast.info("This booking was accepted by another expert.");
+            return;
+          }
+          void evaluateBooking(row);
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [online, expert?.id, evaluateBooking, removeCandidate]);
+
+  // Cleanup all sounds when going offline / unmounting
+  useEffect(() => {
+    if (!online) {
+      candidatesRef.current.forEach((c) => c.soundHandle.stop());
+      setCandidates([]);
+    }
+  }, [online]);
+  useEffect(() => () => stopAllNotificationLoops(), []);
+
+  // Existing assigned-booking subscription (unchanged)
   useEffect(() => {
     if (!expert?.id) return;
     const ch = supabase
@@ -66,11 +212,27 @@ function HomeDashboard() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expert", userId] }),
   });
 
+  const acceptBroadcast = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { error } = await supabase.rpc("claim_booking_as_expert", { _booking_id: bookingId });
+      if (error) throw error;
+      return bookingId;
+    },
+    onSuccess: (bookingId) => {
+      removeCandidate(bookingId);
+      qc.invalidateQueries({ queryKey: ["assigned-booking", expert?.id] });
+      navigate({ to: "/booking/$id", params: { id: bookingId } });
+    },
+    onError: (err: Error, bookingId) => {
+      removeCandidate(bookingId);
+      toast.error(err.message || "Could not accept this booking.");
+    },
+  });
+
   if (loading || !userId) {
     return <div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
-  const online = !!expert?.is_online;
   const assigned = assignedQ.data;
 
   return (
@@ -126,6 +288,26 @@ function HomeDashboard() {
             </span>
           </button>
         </div>
+
+        {online && locationState.status === "denied" && (
+          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B45309]" />
+            <p className="text-[13px] font-semibold text-[#92400E]">
+              Location required to receive job requests. Enable location access in your browser settings.
+            </p>
+          </div>
+        )}
+        {online && locationState.status === "unavailable" && (
+          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B45309]" />
+            <p className="text-[13px] font-semibold text-[#92400E]">
+              {locationState.message} — you won't receive new bookings until this is resolved.
+            </p>
+          </div>
+        )}
+        {online && locationState.status === "requesting" && (
+          <p className="mt-3 text-[13px] text-[color:var(--text-secondary)]">Getting your location…</p>
+        )}
       </section>
 
       {assigned ? (
@@ -171,6 +353,70 @@ function HomeDashboard() {
           </Link>
         ))}
       </nav>
+
+      {/* Broadcast overlay stack */}
+      {candidates.length > 0 && (
+        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-[rgba(34,40,49,0.55)] backdrop-blur-sm">
+          <div className="mx-auto flex w-full max-w-md flex-col gap-3 p-4">
+            {candidates.map((c) => (
+              <div
+                key={c.booking.id}
+                className="rounded-[18px] border border-border bg-card p-5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.4)] animate-in slide-in-from-bottom-4"
+              >
+                <div className="flex items-start justify-between">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+                    New booking request
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Dismiss"
+                    onClick={() => dismissCandidate(c.booking.id)}
+                    className="rounded-full p-1 text-[color:var(--text-secondary)] hover:bg-[color:var(--divider)]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-[15px] font-bold text-foreground">
+                  <Clock className="h-4 w-4 text-primary" />
+                  {c.booking.service_duration_minutes ?? "—"}-min service
+                  {c.booking.scheduled_time_slot ? ` · ${c.booking.scheduled_time_slot}` : ""}
+                </div>
+                <div className="mt-3 flex items-start gap-2 rounded-[14px] bg-[color:var(--divider)] p-3">
+                  <MapPin className="mt-0.5 h-4 w-4 text-primary" />
+                  <div className="text-[13px] leading-snug text-foreground">
+                    <p className="font-semibold">{c.address?.full_address ?? "Customer address"}</p>
+                    {(c.address?.area || c.address?.city) && (
+                      <p className="text-[color:var(--text-secondary)]">
+                        {[c.address?.area, c.address?.city].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[12px] font-semibold text-[color:var(--text-secondary)]">
+                      {c.distanceKm.toFixed(1)} km away
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => dismissCandidate(c.booking.id)}
+                    className="h-[52px] flex-1 rounded-[14px] border border-border bg-card text-[15px] font-bold text-foreground"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    type="button"
+                    disabled={acceptBroadcast.isPending}
+                    onClick={() => acceptBroadcast.mutate(c.booking.id)}
+                    className="h-[52px] flex-[1.4] rounded-[14px] bg-primary text-[15px] font-bold text-white disabled:opacity-60"
+                  >
+                    {acceptBroadcast.isPending ? "Accepting…" : "Accept"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
