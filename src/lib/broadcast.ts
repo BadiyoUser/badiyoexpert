@@ -34,8 +34,8 @@ export function useExpertLocationTracking(enabled: boolean) {
   const pushToServer = useCallback(async (coords: Coords) => {
     try {
       await supabase.rpc("expert_update_location", {
-        _lat: coords.lat,
-        _lng: coords.lng,
+        p_lat: coords.lat,
+        p_lng: coords.lng,
       });
       lastPushRef.current = Date.now();
     } catch {

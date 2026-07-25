@@ -10,6 +10,7 @@ import {
   useExpertLocationTracking,
   type Coords,
 } from "@/lib/broadcast";
+import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -48,6 +49,11 @@ function HomeDashboard() {
   const { data: expert } = useExpert(userId);
   const qc = useQueryClient();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!userId) return;
+    void initExpertPush((opts) => navigate(opts as Parameters<typeof navigate>[0]));
+  }, [userId, navigate]);
 
   const online = !!expert?.is_online;
   const locationState = useExpertLocationTracking(online);
