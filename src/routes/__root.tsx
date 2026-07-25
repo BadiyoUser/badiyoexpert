@@ -84,10 +84,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Badiyo Expert — accept bookings and serve customers on the go." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Badiyo Expert" },
+      { name: "twitter:description", content: "Badiyo Expert — accept bookings and serve customers on the go." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/59ae8687-eb8a-486a-a566-9d4fcdce73bc/id-preview-306aa5d1--fbf7d2d0-c2ed-40ae-9442-272eb6566693.lovable.app-1784984809356.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/59ae8687-eb8a-486a-a566-9d4fcdce73bc/id-preview-306aa5d1--fbf7d2d0-c2ed-40ae-9442-272eb6566693.lovable.app-1784984809356.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
