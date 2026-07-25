@@ -177,8 +177,8 @@ function BookingScreen() {
                 <Navigation2 className="h-4 w-4" /> Navigate
               </a>
             )}
-            {customerQ.data?.phone_number && (
-              <a href={`tel:${customerQ.data.phone_number}`} className="flex h-11 items-center justify-center gap-1 rounded-[14px] border border-border bg-card text-[14px] font-bold text-foreground">
+            {customerQ.data?.phone && (
+              <a href={`tel:${customerQ.data.phone}`} className="flex h-11 items-center justify-center gap-1 rounded-[14px] border border-border bg-card text-[14px] font-bold text-foreground">
                 <Phone className="h-4 w-4" /> Call
               </a>
             )}

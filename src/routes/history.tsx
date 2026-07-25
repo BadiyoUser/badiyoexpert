@@ -67,7 +67,7 @@ function HistoryScreen() {
                   <span className="text-[16px] font-bold text-foreground">{formatINR(b.price)}</span>
                 </div>
                 <p className="mt-2 text-[15px] font-semibold text-foreground">{b.service_duration_minutes}-minute service</p>
-                <p className="mt-1 text-[12px] text-[color:var(--text-secondary)]">{new Date(b.created_at).toLocaleString("en-IN")}</p>
+                <p className="mt-1 text-[12px] text-[color:var(--text-secondary)]">{b.created_at ? new Date(b.created_at).toLocaleString("en-IN") : ""}</p>
               </li>
             ))}
           </ul>
