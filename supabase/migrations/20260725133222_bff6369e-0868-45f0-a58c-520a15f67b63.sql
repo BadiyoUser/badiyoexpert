@@ -1,0 +1,1 @@
+DELETE FROM public.otp_rate_limits WHERE phone='8698340766';
