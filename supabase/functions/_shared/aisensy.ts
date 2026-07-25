@@ -1,5 +1,6 @@
 // Sends a WhatsApp template message via AiSensy.
-// See https://apps.aisensy.com/ for template setup.
+// AiSensy often returns HTTP 200 even on failure, embedding the error in the
+// response body — we parse and inspect it so silent failures surface.
 export async function sendAiSensyTemplate(opts: {
   campaignName: string;
   destination: string; // e.g. "918698340766" (no +)
@@ -18,15 +19,45 @@ export async function sendAiSensyTemplate(opts: {
     templateParams: opts.templateParams ?? [],
   };
 
-  const res = await fetch("https://backend.aisensy.com/campaign/t1/api/v2", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+  console.log("[AiSensy] sending", {
+    campaign: payload.campaignName,
+    destination: dest,
+    paramCount: payload.templateParams.length,
   });
+
+  let res: Response;
+  try {
+    res = await fetch("https://backend.aisensy.com/campaign/t1/api/v2", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    console.error("[AiSensy] network error", e);
+    throw new Error(`AiSensy network error: ${(e as Error).message}`);
+  }
+
   const text = await res.text();
+  console.log("[AiSensy] response", res.status, text);
+
   if (!res.ok) {
-    console.error("AiSensy error", res.status, text);
-    throw new Error(`AiSensy send failed: ${res.status}`);
+    throw new Error(`AiSensy send failed (${res.status}): ${text}`);
+  }
+
+  // AiSensy sometimes returns 200 with {"success":false,...} or {"status":"error",...}
+  let parsed: Record<string, unknown> | null = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // non-JSON body — assume success if 200
+  }
+  if (parsed) {
+    const success = parsed["success"];
+    const status = String(parsed["status"] ?? "").toLowerCase();
+    if (success === false || status === "error" || status === "failed") {
+      const msg = parsed["message"] ?? parsed["error"] ?? text;
+      throw new Error(`AiSensy send failed: ${msg}`);
+    }
   }
   return text;
 }
