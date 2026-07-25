@@ -222,11 +222,19 @@ function HomeDashboard() {
 
   const toggle = useMutation({
     mutationFn: async (next: boolean) => {
+      if (next) {
+        // Capture + persist a location fix BEFORE flipping online, so a
+        // broadcast that fires during this gap still sees us as eligible.
+        await tracker.ensureFix();
+      }
       const { error } = await supabase.rpc("expert_set_online", { _online: next });
       if (error) throw error;
       return next;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expert", userId] }),
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not update your status.");
+    },
   });
 
   const acceptBroadcast = useMutation({
