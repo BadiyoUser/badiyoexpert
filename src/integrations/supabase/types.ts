@@ -1072,6 +1072,26 @@ export type Database = {
         Returns: undefined
       }
       ensure_start_otp: { Args: { _booking_id: string }; Returns: string }
+      expert_ensure_booking_codes: {
+        Args: { _booking_id: string }
+        Returns: {
+          end_otp: string
+          start_otp: string
+        }[]
+      }
+      expert_reject_booking: {
+        Args: { _booking_id: string; _reason: string }
+        Returns: undefined
+      }
+      expert_set_online: { Args: { _online: boolean }; Returns: undefined }
+      expert_verify_end_otp: {
+        Args: { _booking_id: string; _otp: string }
+        Returns: number
+      }
+      expert_verify_start_otp: {
+        Args: { _booking_id: string; _otp: string }
+        Returns: string
+      }
       extend_booking: {
         Args: {
           _booking_id: string
