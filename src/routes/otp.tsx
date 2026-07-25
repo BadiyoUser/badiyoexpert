@@ -45,8 +45,8 @@ function OtpScreen() {
     setLoading(true);
     setError(null);
     try {
-      const { email, token_hash } = await expertApi.verifyOtp(phone, digits.join(""));
-      const { error: vErr } = await supabase.auth.verifyOtp({ email, token_hash, type: "magiclink" });
+      const { token_hash } = await expertApi.verifyOtp(phone, digits.join(""));
+      const { error: vErr } = await supabase.auth.verifyOtp({ token_hash, type: "magiclink" });
       if (vErr) throw vErr;
       navigate({ to: "/home" });
     } catch (err) {
