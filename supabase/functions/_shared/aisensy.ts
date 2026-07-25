@@ -6,23 +6,28 @@ export async function sendAiSensyTemplate(opts: {
   destination: string; // e.g. "918698340766" (no +)
   userName?: string;
   templateParams?: string[];
+  buttons?: Array<Record<string, unknown>>;
 }) {
   const apiKey = Deno.env.get("AISENSY_API_KEY");
   if (!apiKey) throw new Error("AISENSY_API_KEY not configured");
 
   const dest = opts.destination.replace(/[^\d]/g, "");
-  const payload = {
+  const payload: Record<string, unknown> = {
     apiKey,
     campaignName: opts.campaignName,
     destination: dest,
     userName: opts.userName ?? "Badiyo Expert",
     templateParams: opts.templateParams ?? [],
   };
+  if (opts.buttons && opts.buttons.length > 0) {
+    payload.buttons = opts.buttons;
+  }
 
   console.log("[AiSensy] sending", {
-    campaign: payload.campaignName,
+    campaign: opts.campaignName,
     destination: dest,
-    paramCount: payload.templateParams.length,
+    paramCount: (opts.templateParams ?? []).length,
+    buttonCount: opts.buttons?.length ?? 0,
   });
 
   let res: Response;
