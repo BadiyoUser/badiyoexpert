@@ -48,6 +48,20 @@ function OtpScreen() {
       const { token_hash } = await expertApi.verifyOtp(phone, digits.join(""));
       const { error: vErr } = await supabase.auth.verifyOtp({ token_hash, type: "magiclink" });
       if (vErr) throw vErr;
+      // If the expert has no PIN yet, force them to set one before entering the app.
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (uid) {
+        const { data: exp } = await supabase
+          .from("experts")
+          .select("pin_hash")
+          .eq("auth_user_id", uid)
+          .maybeSingle();
+        if (!exp?.pin_hash) {
+          navigate({ to: "/set-pin", search: { phone } });
+          return;
+        }
+      }
       navigate({ to: "/home" });
     } catch (err) {
       setError((err as Error).message ?? "Verification failed");

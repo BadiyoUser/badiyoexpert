@@ -36,6 +36,14 @@ export const expertApi = {
       { phone, code },
       { auth: false },
     ),
+  checkPin: (phone: string) =>
+    callFn<{ has_pin: boolean }>("expert-check-pin", { phone }, { auth: false }),
+  verifyPin: (phone: string, pin: string) =>
+    callFn<{ ok: boolean; email: string; token_hash: string }>(
+      "expert-verify-pin",
+      { phone, pin },
+      { auth: false },
+    ),
   sosAlert: (input: {
     booking_id?: string | null;
     latitude?: number | null;

@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SosRouteImport } from './routes/sos'
+import { Route as SetPinRouteImport } from './routes/set-pin'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PinRouteImport } from './routes/pin'
 import { Route as OtpRouteImport } from './routes/otp'
 import { Route as NotRegisteredRouteImport } from './routes/not-registered'
 import { Route as LoginRouteImport } from './routes/login'
@@ -37,6 +39,11 @@ const SosRoute = SosRouteImport.update({
   path: '/sos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetPinRoute = SetPinRouteImport.update({
+  id: '/set-pin',
+  path: '/set-pin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
@@ -45,6 +52,11 @@ const RewardsRoute = RewardsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PinRoute = PinRouteImport.update({
+  id: '/pin',
+  path: '/pin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OtpRoute = OtpRouteImport.update({
@@ -90,8 +102,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/not-registered': typeof NotRegisteredRoute
   '/otp': typeof OtpRoute
+  '/pin': typeof PinRoute
   '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
+  '/set-pin': typeof SetPinRoute
   '/sos': typeof SosRoute
   '/support': typeof SupportRoute
   '/wallet': typeof WalletRoute
@@ -104,8 +118,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/not-registered': typeof NotRegisteredRoute
   '/otp': typeof OtpRoute
+  '/pin': typeof PinRoute
   '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
+  '/set-pin': typeof SetPinRoute
   '/sos': typeof SosRoute
   '/support': typeof SupportRoute
   '/wallet': typeof WalletRoute
@@ -119,8 +135,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/not-registered': typeof NotRegisteredRoute
   '/otp': typeof OtpRoute
+  '/pin': typeof PinRoute
   '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
+  '/set-pin': typeof SetPinRoute
   '/sos': typeof SosRoute
   '/support': typeof SupportRoute
   '/wallet': typeof WalletRoute
@@ -135,8 +153,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/not-registered'
     | '/otp'
+    | '/pin'
     | '/profile'
     | '/rewards'
+    | '/set-pin'
     | '/sos'
     | '/support'
     | '/wallet'
@@ -149,8 +169,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/not-registered'
     | '/otp'
+    | '/pin'
     | '/profile'
     | '/rewards'
+    | '/set-pin'
     | '/sos'
     | '/support'
     | '/wallet'
@@ -163,8 +185,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/not-registered'
     | '/otp'
+    | '/pin'
     | '/profile'
     | '/rewards'
+    | '/set-pin'
     | '/sos'
     | '/support'
     | '/wallet'
@@ -178,8 +202,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NotRegisteredRoute: typeof NotRegisteredRoute
   OtpRoute: typeof OtpRoute
+  PinRoute: typeof PinRoute
   ProfileRoute: typeof ProfileRoute
   RewardsRoute: typeof RewardsRoute
+  SetPinRoute: typeof SetPinRoute
   SosRoute: typeof SosRoute
   SupportRoute: typeof SupportRoute
   WalletRoute: typeof WalletRoute
@@ -209,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/set-pin': {
+      id: '/set-pin'
+      path: '/set-pin'
+      fullPath: '/set-pin'
+      preLoaderRoute: typeof SetPinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rewards': {
       id: '/rewards'
       path: '/rewards'
@@ -221,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pin': {
+      id: '/pin'
+      path: '/pin'
+      fullPath: '/pin'
+      preLoaderRoute: typeof PinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/otp': {
@@ -282,8 +322,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NotRegisteredRoute: NotRegisteredRoute,
   OtpRoute: OtpRoute,
+  PinRoute: PinRoute,
   ProfileRoute: ProfileRoute,
   RewardsRoute: RewardsRoute,
+  SetPinRoute: SetPinRoute,
   SosRoute: SosRoute,
   SupportRoute: SupportRoute,
   WalletRoute: WalletRoute,
