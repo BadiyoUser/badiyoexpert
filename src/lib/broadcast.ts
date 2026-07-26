@@ -306,31 +306,11 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
     };
 
     (async () => {
-      const Geo = await getNativeGeolocation();
-      if (cancelled) return;
-
-      // Immediate refresh on enable/foreground.
+      // Immediate refresh on enable/foreground. This also triggers the OS
+      // permission dialog on first use (via triggerNativeOsPermissionDialog).
       pollOnce();
 
-      if (Geo) {
-        try {
-          await ensureNativePermission();
-          const id = await Geo.watchPosition(
-            { enableHighAccuracy: true, timeout: 20_000 },
-            (pos, err) => {
-              if (err) return onError(err);
-              if (pos) onPosition(pos as unknown as GeolocationPosition);
-            },
-          );
-          if (cancelled) {
-            void Geo.clearWatch({ id });
-          } else {
-            clearWatch = () => void Geo.clearWatch({ id });
-          }
-        } catch (err) {
-          onError(err as Error);
-        }
-      } else if (typeof navigator !== "undefined" && navigator.geolocation) {
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
         const id = navigator.geolocation.watchPosition(onPosition, onError, {
           enableHighAccuracy: true,
           maximumAge: 30_000,
@@ -344,6 +324,7 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
 
       interval = window.setInterval(pollOnce, 60_000);
     })();
+
 
     return () => {
       cancelled = true;
