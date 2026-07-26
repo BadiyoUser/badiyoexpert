@@ -254,36 +254,25 @@ function HomeDashboard() {
     mutationFn: async (next: boolean) => {
       try {
         if (next) {
-          dclear();
-          dlog("Toggle tapped: going ONLINE");
           // Outer safety net: whatever hangs — permission dialog, GPS fix,
           // or the RPC — this guarantees the mutation settles in ≤20s so the
           // UI can never stay in "Updating…" forever.
           await Promise.race([
             (async () => {
-              console.log("[expert][toggle] ensureFix start");
               await tracker.ensureFix();
-              console.log("[expert][toggle] ensureFix done");
               const { error } = await supabase.rpc("expert_set_online", { _online: true });
               if (error) throw error;
             })(),
             new Promise((_, reject) =>
-              setTimeout(() => {
-                dlog("toggle: OUTER TIMEOUT fired (20s)");
-                reject(new Error("Toggle timed out after 20s"));
-              }, 20_000),
+              setTimeout(() => reject(new Error("Toggle timed out after 20s")), 20_000),
             ),
           ]);
-          dlog("Toggle: SUCCESS online");
           return next;
         }
-        dlog("Toggle tapped: going OFFLINE");
         const { error } = await supabase.rpc("expert_set_online", { _online: false });
         if (error) throw error;
-        dlog("Toggle: SUCCESS offline");
         return next;
       } catch (err) {
-        dlog(`Toggle: FAILED ${(err as Error).message}`);
         console.warn("[expert][toggle] failed", err);
         throw err;
       }
