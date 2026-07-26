@@ -18,6 +18,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.PermissionCallback;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.annotation.Permission;
+import androidx.core.content.ContextCompat;
 
 /**
  * Custom Capacitor plugin to handle Android's 2-step background location
@@ -94,6 +95,43 @@ public class BackgroundLocationPlugin extends Plugin {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(intent);
         call.resolve();
+    }
+
+    @PluginMethod
+    public void startBackgroundService(PluginCall call) {
+        JSObject ret = new JSObject();
+        if (!hasBackgroundLocation()) {
+            ret.put("started", false);
+            ret.put("reason", "background_not_granted");
+            call.resolve(ret);
+            return;
+        }
+        Intent svc = new Intent(getContext(), BackgroundAvailabilityService.class);
+        svc.setAction(BackgroundAvailabilityService.ACTION_START);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(getContext(), svc);
+        } else {
+            getContext().startService(svc);
+        }
+        ret.put("started", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void stopBackgroundService(PluginCall call) {
+        Intent svc = new Intent(getContext(), BackgroundAvailabilityService.class);
+        svc.setAction(BackgroundAvailabilityService.ACTION_STOP);
+        // Use startService with STOP action so the service can call
+        // stopForeground(REMOVE) itself before stopSelf — cleaner than
+        // stopService, which skips onStartCommand entirely.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(getContext(), svc);
+        } else {
+            getContext().startService(svc);
+        }
+        JSObject ret = new JSObject();
+        ret.put("stopped", true);
+        call.resolve(ret);
     }
 
     private boolean hasForegroundLocation() {

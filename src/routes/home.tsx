@@ -10,6 +10,11 @@ import {
   useExpertLocationTracking,
   type Coords,
 } from "@/lib/broadcast";
+import {
+  checkBackgroundLocation,
+  startBackgroundAvailabilityService,
+  stopBackgroundAvailabilityService,
+} from "@/lib/background-location";
 import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -353,10 +358,25 @@ function HomeDashboard() {
               setTimeout(() => reject(new Error("Toggle timed out after 20s")), 20_000),
             ),
           ]);
+          // Opt-in background service: only start if the expert has already
+          // granted ACCESS_BACKGROUND_LOCATION via Profile. Otherwise this is
+          // a silent no-op — foreground-only behavior remains unchanged.
+          try {
+            const bg = await checkBackgroundLocation();
+            if (bg.background) await startBackgroundAvailabilityService();
+          } catch (e) {
+            console.warn("[expert][toggle] bg service start skipped", e);
+          }
           return next;
         }
         const { error } = await supabase.rpc("expert_set_online", { _online: false });
         if (error) throw error;
+        // Always attempt to stop — safe no-op if never started or not Android.
+        try {
+          await stopBackgroundAvailabilityService();
+        } catch (e) {
+          console.warn("[expert][toggle] bg service stop failed", e);
+        }
         return next;
       } catch (err) {
         console.warn("[expert][toggle] failed", err);
