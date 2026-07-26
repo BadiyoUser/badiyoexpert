@@ -32,10 +32,11 @@ function SosScreen() {
     try {
       coords = await new Promise((resolve) => {
         if (!navigator.geolocation) return resolve(null);
+        const t = setTimeout(() => resolve(null), 7000);
         navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-          () => resolve(null),
-          { timeout: 4000 },
+          (pos) => { clearTimeout(t); resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }); },
+          () => { clearTimeout(t); resolve(null); },
+          { timeout: 7000, maximumAge: 60000, enableHighAccuracy: false },
         );
       });
     } catch { /* ignore */ }
