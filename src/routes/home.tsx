@@ -284,7 +284,7 @@ function HomeDashboard() {
   const assigned = assignedQ.data;
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pb-[max(env(safe-area-inset-bottom),1.5rem)]">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pt-[env(safe-area-inset-top)] pb-[max(env(safe-area-inset-bottom),1.5rem)]">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-7 w-auto" />
         <Link to="/profile" className="flex items-center gap-2 rounded-full bg-card border border-border py-1.5 pl-1.5 pr-3" aria-label="Profile">
