@@ -228,7 +228,7 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
         return;
       }
 
-      interval = window.setInterval(pollOnce, 60_000);
+      interval = window.setInterval(pollOnce, 30_000);
     })();
 
 
