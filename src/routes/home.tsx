@@ -198,6 +198,7 @@ function HomeDashboard() {
         { event: "*", schema: "public", table: "bookings", filter: `assigned_expert_id=eq.${expert.id}` },
         () => {
           qc.invalidateQueries({ queryKey: ["assigned-booking", expert.id] });
+          qc.invalidateQueries({ queryKey: ["expert", userId] });
         },
       )
       .subscribe();
