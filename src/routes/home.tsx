@@ -56,6 +56,7 @@ function HomeDashboard() {
   }, [userId, navigate]);
 
   const online = !!expert?.is_online;
+  const isBusy = !!expert?.is_busy;
   const tracker = useExpertLocationTracking(online);
   const locationState = tracker.state;
   const coordsRef = useRef<Coords | null>(null);
