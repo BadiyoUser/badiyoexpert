@@ -142,9 +142,9 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   }, []);
 
   const applyError = useCallback((err: GeolocationPositionError | Error) => {
-    // Suppress geolocation errors while backgrounded — browsers throttle or
-    // time out watchPosition/getCurrentPosition when the tab is hidden, and
-    // that's expected OS behavior, not a genuine failure.
+    // Suppress geolocation errors while backgrounded / screen locked — browsers
+    // throttle or time out watchPosition/getCurrentPosition when the tab is
+    // hidden, and that's expected OS behavior, not a genuine failure.
     if (hiddenRef.current) return;
     if ("code" in err && err.code === err.PERMISSION_DENIED) {
       setState({ status: "denied" });
@@ -155,6 +155,7 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
       message: (err as Error).message || "Location unavailable",
     });
   }, []);
+
 
   const ensureFix = useCallback(async (): Promise<Coords> => {
     setState((prev) => (prev.status === "ok" ? prev : { status: "requesting" }));
@@ -174,13 +175,64 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
     }
   }, [applyPosition, applyError]);
 
-  // Track page visibility so we can pause tracking while hidden.
+  // Track page visibility so we can pause tracking while hidden (backgrounded
+  // OR screen locked). On Android, screen lock reliably fires visibilitychange
+  // via WebView; we also listen for pagehide/pageshow and window blur/focus as
+  // belt-and-suspenders, and hook into the Capacitor App plugin when native.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const onVis = () => setIsHidden(document.hidden);
+    const setHidden = (h: boolean) => {
+      setIsHidden(h);
+      if (!h) {
+        // Coming back to foreground: clear any stale "unavailable" state so
+        // we don't flash red before the next fix lands.
+        setState((prev) =>
+          prev.status === "unavailable" || prev.status === "idle"
+            ? { status: "requesting" }
+            : prev,
+        );
+      }
+    };
+    const onVis = () => setHidden(document.hidden);
+    const onPageHide = () => setHidden(true);
+    const onPageShow = () => setHidden(false);
+    const onBlur = () => setHidden(true);
+    const onFocus = () => setHidden(document.hidden);
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+
+    let removeCapListeners: (() => void) | null = null;
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform?.()) return;
+        const { App } = await import("@capacitor/app");
+        const pauseHandle = await App.addListener("pause", () => setHidden(true));
+        const resumeHandle = await App.addListener("resume", () => setHidden(false));
+        const stateHandle = await App.addListener("appStateChange", (s) => setHidden(!s.isActive));
+        removeCapListeners = () => {
+          pauseHandle.remove();
+          resumeHandle.remove();
+          stateHandle.remove();
+        };
+      } catch {
+        // Plugin not available — web fallbacks above are enough.
+      }
+    })();
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      if (removeCapListeners) removeCapListeners();
+    };
   }, []);
+
 
   useEffect(() => {
     if (!enabled) {
