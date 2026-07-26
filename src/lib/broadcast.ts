@@ -1,6 +1,8 @@
 // Utilities for the Home-screen broadcast experience.
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+// TEMPORARY: on-screen debug overlay for diagnosing Online-toggle hangs.
+import { dlog } from "@/lib/debug-log";
 
 export type Coords = { lat: number; lng: number };
 
