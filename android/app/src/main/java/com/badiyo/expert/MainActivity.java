@@ -29,7 +29,11 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Register custom plugins BEFORE super.onCreate so Capacitor picks them up.
+        registerPlugin(BackgroundLocationPlugin.class);
         super.onCreate(savedInstanceState);
+
+
 
         this.bridge.getWebView().setWebChromeClient(new BridgeWebChromeClient(this.bridge) {
             @Override

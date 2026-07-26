@@ -1,9 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ChevronLeft, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera } from "lucide-react";
-import { useRef, useState } from "react";
+import { ChevronLeft, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera, Radio } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useExpert, useExpertSession, initials } from "@/lib/expert-client";
+import {
+  checkBackgroundLocation,
+  requestBackgroundLocation,
+  openAppLocationSettings,
+  type BgLocationStatus,
+} from "@/lib/background-location";
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -23,6 +30,57 @@ function ProfileScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bgStatus, setBgStatus] = useState<BgLocationStatus | null>(null);
+  const [bgBusy, setBgBusy] = useState(false);
+  const [bgHint, setBgHint] = useState<string | null>(null);
+
+  const refreshBg = useCallback(async () => {
+    setBgStatus(await checkBackgroundLocation());
+  }, []);
+
+  useEffect(() => {
+    void refreshBg();
+    const onVis = () => { if (!document.hidden) void refreshBg(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [refreshBg]);
+
+  async function enableBackgroundLocation() {
+    setBgBusy(true);
+    setBgHint(null);
+    try {
+      const status = await checkBackgroundLocation();
+      setBgStatus(status);
+      if (status.unavailable) {
+        setBgHint("Background alerts are only available in the Android app.");
+        return;
+      }
+      if (!status.foreground) {
+        setBgHint("Turn on location from the Home screen first, then try again.");
+        return;
+      }
+      if (status.background) return;
+      if (status.mustUseSettings) {
+        setBgHint("Opening Settings — tap Permissions › Location › Allow all the time, then return here.");
+        await openAppLocationSettings();
+      } else {
+        const res = await requestBackgroundLocation();
+        if (!res.granted) {
+          setBgHint(
+            res.reason === "must_open_settings"
+              ? "Opening Settings — choose Allow all the time."
+              : "Permission not granted. You can enable it anytime from Settings.",
+          );
+          if (res.reason === "must_open_settings") await openAppLocationSettings();
+        }
+      }
+      await refreshBg();
+    } finally {
+      setBgBusy(false);
+    }
+  }
+
+
 
   async function logout() {
     await supabase.auth.signOut();
@@ -121,6 +179,62 @@ function ProfileScreen() {
         <Row Icon={Phone} label="Phone" value={`+91 ${expert?.phone ?? ""}`} />
         {expert?.address && <Row Icon={MapPin} label="Address" value={expert.address} />}
       </section>
+
+      {bgStatus && !bgStatus.unavailable && (
+        <section className="mt-6 px-6">
+          <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
+            Background availability
+          </h3>
+          <div className="rounded-[18px] border border-border bg-card p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
+                <Radio className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[15px] font-semibold text-foreground">Enable background job alerts</p>
+                <p className="mt-1 text-[13px] leading-snug text-[color:var(--text-secondary)]">
+                  Allow Badiyo to access your location even when the app is closed, so you never miss a nearby job.
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      bgStatus.background
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {bgStatus.background ? "Granted" : "Not granted"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {!bgStatus.background && (
+              <button
+                type="button"
+                onClick={enableBackgroundLocation}
+                disabled={bgBusy}
+                className="mt-4 flex h-[52px] w-full items-center justify-center rounded-[14px] bg-primary text-[16px] font-bold text-white disabled:opacity-60"
+              >
+                {bgBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Enable background alerts"}
+              </button>
+            )}
+            {bgStatus.background && (
+              <button
+                type="button"
+                onClick={openAppLocationSettings}
+                className="mt-4 flex h-[44px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-[14px] font-semibold text-foreground"
+              >
+                Manage in Settings
+              </button>
+            )}
+            {bgHint && (
+              <p className="mt-3 text-[12px] leading-snug text-[color:var(--text-secondary)]">{bgHint}</p>
+            )}
+          </div>
+        </section>
+      )}
+
+
 
       <div className="mt-auto px-6 pt-8">
         <button onClick={logout} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">
