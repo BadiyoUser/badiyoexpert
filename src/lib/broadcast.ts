@@ -122,7 +122,7 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
 
 
 // Tracks device geolocation while `enabled` is true and pushes it to Supabase
-// on every fresh reading plus a 60s poll. Also exposes `ensureFix()` for the
+// on every fresh reading plus a 30s poll. Also exposes `ensureFix()` for the
 // caller to await a fresh persisted fix before flipping Online.
 export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   const [state, setState] = useState<LocationState>({ status: "idle" });
