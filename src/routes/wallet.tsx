@@ -14,6 +14,14 @@ export const Route = createFileRoute("/wallet")({
   component: WalletScreen,
 });
 
+// Replaces any 8+ hex-char UUID-ish token inside a reason label with a short
+// "#xxxxxx" tag (first 6 chars), matching the Command Center booking-id style.
+const UUID_RE = /\b[0-9a-f]{8}(?:-?[0-9a-f]{4}){3}-?[0-9a-f]{12}\b/gi;
+function formatReason(reason: string | null, type: "credit" | "debit" | string): string {
+  if (!reason) return type === "credit" ? "Credit" : "Debit";
+  return reason.replace(UUID_RE, (uuid) => `#${uuid.replace(/-/g, "").slice(0, 6)}`);
+}
+
 function WalletScreen() {
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
@@ -67,7 +75,7 @@ function WalletScreen() {
                   {t.type === "credit" ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-[14px] font-semibold text-foreground">{t.reason ?? (t.type === "credit" ? "Credit" : "Debit")}</p>
+                  <p className="text-[14px] font-semibold text-foreground">{formatReason(t.reason, t.type)}</p>
                   <p className="text-[12px] text-[color:var(--text-secondary)]">{new Date(t.created_at).toLocaleString("en-IN")}</p>
                 </div>
                 <span className={`text-[15px] font-bold ${t.type === "credit" ? "text-primary" : "text-red-600"}`}>
