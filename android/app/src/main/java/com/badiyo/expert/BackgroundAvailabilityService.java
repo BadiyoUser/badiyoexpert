@@ -229,8 +229,8 @@ public class BackgroundAvailabilityService extends Service {
             conn.setRequestProperty("Authorization", "Bearer " + accessToken);
 
             JSONObject body = new JSONObject();
-            body.put("lat", lat);
-            body.put("lng", lng);
+            body.put("p_lat", lat);
+            body.put("p_lng", lng);
             byte[] payload = body.toString().getBytes("UTF-8");
 
             try (OutputStream os = conn.getOutputStream()) {
