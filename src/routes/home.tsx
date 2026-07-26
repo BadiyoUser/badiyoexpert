@@ -14,8 +14,6 @@ import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-// TEMPORARY: on-screen debug overlay for diagnosing Online-toggle hangs.
-import { dlog, dclear, useDebugLog } from "@/lib/debug-log";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
