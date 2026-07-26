@@ -56,6 +56,7 @@ function HomeDashboard() {
   }, [userId, navigate]);
 
   const online = !!expert?.is_online;
+  const isBusy = !!expert?.is_busy;
   const tracker = useExpertLocationTracking(online);
   const locationState = tracker.state;
   const coordsRef = useRef<Coords | null>(null);
@@ -111,6 +112,7 @@ function HomeDashboard() {
   const evaluateBooking = useCallback(
     async (booking: BroadcastBooking) => {
       if (!online) return;
+      if (isBusy) return;
       if (dismissedRef.current.has(booking.id)) return;
       if (candidatesRef.current.some((c) => c.booking.id === booking.id)) return;
       if (booking.assigned_expert_id) return;
@@ -142,7 +144,7 @@ function HomeDashboard() {
         return [...prev, { booking, address, distanceKm, soundHandle }];
       });
     },
-    [online, radiusKm],
+    [online, isBusy, radiusKm],
   );
 
   // Subscribe to broadcast events while online
@@ -179,11 +181,11 @@ function HomeDashboard() {
 
   // Cleanup all sounds when going offline / unmounting
   useEffect(() => {
-    if (!online) {
+    if (!online || isBusy) {
       candidatesRef.current.forEach((c) => c.soundHandle.stop());
       setCandidates([]);
     }
-  }, [online]);
+  }, [online, isBusy]);
   useEffect(() => () => stopAllNotificationLoops(), []);
 
   // Existing assigned-booking subscription (unchanged)
@@ -196,6 +198,7 @@ function HomeDashboard() {
         { event: "*", schema: "public", table: "bookings", filter: `assigned_expert_id=eq.${expert.id}` },
         () => {
           qc.invalidateQueries({ queryKey: ["assigned-booking", expert.id] });
+          qc.invalidateQueries({ queryKey: ["expert", userId] });
         },
       )
       .subscribe();
@@ -242,8 +245,7 @@ function HomeDashboard() {
     mutationFn: async (bookingId: string) => {
       if (!expert?.id) throw new Error("Expert profile unavailable");
       const { error } = await supabase.rpc("claim_booking_as_expert", {
-        _booking_id: bookingId,
-        _expert_id: expert.id,
+        p_booking_id: bookingId,
       });
       if (error) throw error;
       return bookingId;
@@ -375,9 +377,13 @@ function HomeDashboard() {
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
             <Inbox className="h-9 w-9 text-primary" strokeWidth={2} />
           </div>
-          <h2 className="mt-5 text-[20px] font-bold text-foreground">Waiting for a booking</h2>
+          <h2 className="mt-5 text-[20px] font-bold text-foreground">
+            {isBusy ? "Active booking in progress" : "Waiting for a booking"}
+          </h2>
           <p className="mt-2 max-w-xs text-[14px] text-[color:var(--text-secondary)]">
-            {online ? "New requests from nearby customers will appear here." : "Turn on your availability to start getting requests."}
+            {isBusy
+              ? "New requests are paused until your current booking is complete."
+              : online ? "New requests from nearby customers will appear here." : "Turn on your availability to start getting requests."}
           </p>
         </section>
       )}
