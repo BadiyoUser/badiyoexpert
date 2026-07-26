@@ -3,24 +3,60 @@ import { toast } from "sonner";
 
 type NavigateFn = (opts: { to: string; params?: Record<string, string> }) => void;
 
-let initialized = false;
+const LAST_REG_KEY = "expert_push_last_registered_at";
+const STALE_MS = 24 * 60 * 60 * 1000;
 
-async function registerToken(fcmToken: string, platform: string) {
-  const { data } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
-  if (!accessToken) return;
-  await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-register-push-token`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ fcm_token: fcmToken, platform }),
-    },
-  ).catch((err) => console.warn("register push token failed", err));
+let initialized = false;
+let currentToken: string | null = null;
+let currentPlatform: string | null = null;
+
+async function callRegister(fcmToken: string, platform: string) {
+  const { error } = await supabase.rpc("register_device_token", {
+    p_fcm_token: fcmToken,
+    p_platform: platform,
+  });
+  if (error) {
+    console.warn("register_device_token failed", error);
+    return false;
+  }
+  try {
+    localStorage.setItem(LAST_REG_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
+async function maybeRefreshIfStale() {
+  if (!currentToken || !currentPlatform) return;
+  let last = 0;
+  try {
+    last = Number(localStorage.getItem(LAST_REG_KEY) ?? "0");
+  } catch {
+    /* ignore */
+  }
+  if (!last || Date.now() - last > STALE_MS) {
+    await callRegister(currentToken, currentPlatform);
+  }
+}
+
+function routeFromData(
+  data: unknown,
+  navigate: NavigateFn,
+): (() => void) | undefined {
+  const d = (data ?? {}) as { route?: string; booking_id?: string };
+  if (d.booking_id) {
+    return () => navigate({ to: "/booking/$id", params: { id: d.booking_id! } });
+  }
+  if (typeof d.route === "string" && d.route.length > 0) {
+    const route = d.route;
+    const bookingMatch = route.match(/^\/?booking\/([^/?#]+)/);
+    if (bookingMatch) {
+      return () => navigate({ to: "/booking/$id", params: { id: bookingMatch[1] } });
+    }
+    return () => navigate({ to: route.startsWith("/") ? route : `/${route}` });
+  }
+  return undefined;
 }
 
 export async function initExpertPush(navigate: NavigateFn) {
@@ -48,24 +84,34 @@ export async function initExpertPush(navigate: NavigateFn) {
   await PushNotifications.register();
 
   const platform = Capacitor.getPlatform();
+  currentPlatform = platform;
 
   await PushNotifications.addListener("registration", (t) => {
-    void registerToken(t.value, platform);
+    currentToken = t.value;
+    void callRegister(t.value, platform);
   });
   await PushNotifications.addListener("registrationError", (err) => {
     console.warn("push registration error", err);
   });
   await PushNotifications.addListener("pushNotificationReceived", (n) => {
-    const bookingId = (n.data as { booking_id?: string } | undefined)?.booking_id;
-    toast.message(n.title ?? "New booking assigned", {
+    // Foreground handler for non-broadcast notifications
+    // (cancellations, admin messages, etc.). The new-booking broadcast has
+    // its own realtime+sound flow on Home and does not need a toast.
+    const data = n.data as { type?: string } | undefined;
+    if (data?.type === "new_booking_broadcast") return;
+    const onClick = routeFromData(n.data, navigate);
+    toast.message(n.title ?? "Notification", {
       description: n.body ?? undefined,
-      action: bookingId
-        ? { label: "View", onClick: () => navigate({ to: "/booking/$id", params: { id: bookingId } }) }
-        : undefined,
+      action: onClick ? { label: "Open", onClick } : undefined,
     });
   });
   await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-    const bookingId = (action.notification.data as { booking_id?: string } | undefined)?.booking_id;
-    if (bookingId) navigate({ to: "/booking/$id", params: { id: bookingId } });
+    const onClick = routeFromData(action.notification.data, navigate);
+    if (onClick) onClick();
+  });
+
+  // Re-register on foreground if last registration is stale (>24h).
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") void maybeRefreshIfStale();
   });
 }
