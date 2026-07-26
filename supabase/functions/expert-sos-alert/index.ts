@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const { data: expert } = await admin
       .from("experts")
-      .select("id, name, phone")
+      .select("id, name, phone, current_lat, current_lng, location_updated_at")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
     if (!expert) return json({ error: "Expert profile not found" }, { status: 403 });
