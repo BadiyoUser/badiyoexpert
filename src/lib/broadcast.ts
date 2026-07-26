@@ -145,6 +145,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 }
 
 async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
+  dlog("getCurrentPositionOnce: entry");
   const Geo = await getNativeGeolocation();
   if (Geo) {
     await ensureNativePermission();
