@@ -72,15 +72,15 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
   }
 
-  /* Respect device safe areas (notch, status bar) on native builds.
-     StatusBar.setOverlaysWebView(false) also inset content, but this keeps
-     web/PWA and edge-cases (translucent bars) rendering correctly too. */
+  /* Horizontal safe-area only; vertical safe-area padding is applied by each
+     page container so that min-h-[100dvh] children don't overflow the body
+     and cause unwanted scroll on devices with status/gesture bars. */
   body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
 }
+
