@@ -14,8 +14,6 @@ import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-// TEMPORARY: on-screen debug overlay for diagnosing Online-toggle hangs.
-import { dlog, dclear, useDebugLog } from "@/lib/debug-log";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -256,36 +254,25 @@ function HomeDashboard() {
     mutationFn: async (next: boolean) => {
       try {
         if (next) {
-          dclear();
-          dlog("Toggle tapped: going ONLINE");
           // Outer safety net: whatever hangs — permission dialog, GPS fix,
           // or the RPC — this guarantees the mutation settles in ≤20s so the
           // UI can never stay in "Updating…" forever.
           await Promise.race([
             (async () => {
-              console.log("[expert][toggle] ensureFix start");
               await tracker.ensureFix();
-              console.log("[expert][toggle] ensureFix done");
               const { error } = await supabase.rpc("expert_set_online", { _online: true });
               if (error) throw error;
             })(),
             new Promise((_, reject) =>
-              setTimeout(() => {
-                dlog("toggle: OUTER TIMEOUT fired (20s)");
-                reject(new Error("Toggle timed out after 20s"));
-              }, 20_000),
+              setTimeout(() => reject(new Error("Toggle timed out after 20s")), 20_000),
             ),
           ]);
-          dlog("Toggle: SUCCESS online");
           return next;
         }
-        dlog("Toggle tapped: going OFFLINE");
         const { error } = await supabase.rpc("expert_set_online", { _online: false });
         if (error) throw error;
-        dlog("Toggle: SUCCESS offline");
         return next;
       } catch (err) {
-        dlog(`Toggle: FAILED ${(err as Error).message}`);
         console.warn("[expert][toggle] failed", err);
         throw err;
       }
@@ -553,37 +540,8 @@ function HomeDashboard() {
           </div>
         </div>
       )}
-
-      {/* TEMPORARY: on-screen debug overlay for diagnosing Online-toggle hangs.
-          Remove this component, its import, and src/lib/debug-log.ts once fixed. */}
-      <DebugOverlay />
     </div>
   );
 }
 
-// TEMPORARY debug overlay — see comment above.
-function DebugOverlay() {
-  const lines = useDebugLog();
-  const [open, setOpen] = useState(true);
-  if (lines.length === 0 && !open) return null;
-  return (
-    <div
-      className="fixed bottom-2 left-2 z-[60] max-h-[45vh] w-[70vw] max-w-sm overflow-y-auto rounded-md p-2 font-mono text-[10px] leading-tight shadow-lg"
-      style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "#FFFFFF", pointerEvents: "auto" }}
-    >
-      <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase" style={{ color: "#FFFFFF" }}>
-        <span>debug ({lines.length})</span>
-        <div className="flex gap-2">
-          <button onClick={() => dclear()} className="rounded px-1.5" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#FFFFFF" }}>clr</button>
-          <button onClick={() => setOpen((o) => !o)} className="rounded px-1.5" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#FFFFFF" }}>
-            {open ? "hide" : "show"}
-          </button>
-        </div>
-      </div>
-      {open && lines.map((l, i) => (
-        <div key={i} className="whitespace-pre-wrap break-words" style={{ color: "#FFFFFF" }}>{l}</div>
-      ))}
-    </div>
-  );
-}
 
