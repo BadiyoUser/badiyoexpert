@@ -167,14 +167,12 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
       setLastPushedAt(null);
       return;
     }
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setState({ status: "unavailable", message: "Geolocation not supported on this device." });
-      return;
-    }
     // Pause tracking while the tab is hidden — keep last-known state intact.
     if (isHidden) return;
 
     let cancelled = false;
+    let clearWatch: (() => void) | null = null;
+    let interval: number | null = null;
 
     const onPosition = (pos: GeolocationPosition) => {
       if (cancelled) return;
@@ -183,36 +181,59 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
         .then(() => setLastPushedAt(Date.now()))
         .catch((err) => console.error("[expert] location push failed", err));
     };
-    const onError = (err: GeolocationPositionError) => {
+    const onError = (err: GeolocationPositionError | Error) => {
       if (cancelled) return;
       applyError(err);
     };
 
-    // On becoming visible (or first enable), immediately refresh the fix.
-    navigator.geolocation.getCurrentPosition(onPosition, onError, {
-      enableHighAccuracy: true,
-      maximumAge: 30_000,
-      timeout: 20_000,
-    });
+    const pollOnce = () => {
+      getCurrentPositionOnce().then(onPosition).catch(onError);
+    };
 
-    const watchId = navigator.geolocation.watchPosition(onPosition, onError, {
-      enableHighAccuracy: true,
-      maximumAge: 30_000,
-      timeout: 20_000,
-    });
+    (async () => {
+      const Geo = await getNativeGeolocation();
+      if (cancelled) return;
 
-    const interval = window.setInterval(() => {
-      navigator.geolocation.getCurrentPosition(onPosition, onError, {
-        enableHighAccuracy: true,
-        maximumAge: 30_000,
-        timeout: 20_000,
-      });
-    }, 60_000);
+      // Immediate refresh on enable/foreground.
+      pollOnce();
+
+      if (Geo) {
+        try {
+          await ensureNativePermission();
+          const id = await Geo.watchPosition(
+            { enableHighAccuracy: true, timeout: 20_000 },
+            (pos, err) => {
+              if (err) return onError(err);
+              if (pos) onPosition(pos as unknown as GeolocationPosition);
+            },
+          );
+          if (cancelled) {
+            void Geo.clearWatch({ id });
+          } else {
+            clearWatch = () => void Geo.clearWatch({ id });
+          }
+        } catch (err) {
+          onError(err as Error);
+        }
+      } else if (typeof navigator !== "undefined" && navigator.geolocation) {
+        const id = navigator.geolocation.watchPosition(onPosition, onError, {
+          enableHighAccuracy: true,
+          maximumAge: 30_000,
+          timeout: 20_000,
+        });
+        clearWatch = () => navigator.geolocation.clearWatch(id);
+      } else {
+        setState({ status: "unavailable", message: "Geolocation not supported on this device." });
+        return;
+      }
+
+      interval = window.setInterval(pollOnce, 60_000);
+    })();
 
     return () => {
       cancelled = true;
-      navigator.geolocation.clearWatch(watchId);
-      window.clearInterval(interval);
+      if (clearWatch) clearWatch();
+      if (interval !== null) window.clearInterval(interval);
     };
   }, [enabled, isHidden, applyPosition, applyError]);
 
