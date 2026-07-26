@@ -228,16 +228,21 @@ function HomeDashboard() {
         .from("bookings")
         .select("id, status, assigned_expert_id")
         .in("id", ids);
-      if (error) return;
+      if (error) {
+        console.log("[broadcast][reverify] error", error);
+        return;
+      }
       const stillValid = new Set(
         (data ?? [])
           .filter((r) => r.status === "accepted" && r.assigned_expert_id == null)
           .map((r) => r.id as string),
       );
-      for (const id of ids) {
-        if (!stillValid.has(id)) removeCandidate(id);
-      }
-    }, 8_000);
+      const toRemove = ids.filter((id) => !stillValid.has(id));
+      console.log(
+        `[broadcast][reverify] checked=${ids.length} returned=${data?.length ?? 0} valid=${stillValid.size} removed=${toRemove.length}`,
+      );
+      for (const id of toRemove) removeCandidate(id);
+    }, 4_000);
     return () => window.clearInterval(interval);
   }, [online, isBusy, removeCandidate]);
 
@@ -345,7 +350,7 @@ function HomeDashboard() {
   const assigned = assignedQ.data;
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pt-[env(safe-area-inset-top)] pb-[max(env(safe-area-inset-bottom),1.5rem)]">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+6rem)]">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-7 w-auto" />
         <Link to="/profile" className="rounded-full" aria-label="Profile">
@@ -489,7 +494,7 @@ function HomeDashboard() {
         </section>
       )}
 
-      <nav className="mt-6 grid grid-cols-4 gap-2 px-6">
+      <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto grid w-full max-w-md grid-cols-4 gap-2 border-t border-border bg-background px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
         {[
           { to: "/history" as const, label: "History", Icon: History },
           { to: "/wallet" as const, label: "Wallet", Icon: Wallet },
