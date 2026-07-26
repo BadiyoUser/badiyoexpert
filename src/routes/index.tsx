@@ -18,7 +18,7 @@ function Splash() {
 
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center px-8"
+      className="flex min-h-[100dvh] flex-col items-center justify-center px-8"
       style={{ backgroundColor: "#00B97A" }}
     >
       <img

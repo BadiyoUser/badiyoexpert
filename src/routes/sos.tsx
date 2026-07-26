@@ -52,11 +52,11 @@ function SosScreen() {
     }
   }
 
-  if (loading || !userId) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (loading || !userId) return <div className="flex min-h-[100dvh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   if (state === "sent") {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
             <CheckCircle2 className="h-12 w-12 text-primary" />
@@ -75,7 +75,7 @@ function SosScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
       <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
         <ChevronLeft className="h-6 w-6" />
       </Link>

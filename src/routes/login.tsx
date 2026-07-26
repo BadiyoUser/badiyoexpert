@@ -43,7 +43,7 @@ function LoginScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-8 pt-6">
       <div className="flex items-center justify-center py-8">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-10 w-auto" />
       </div>

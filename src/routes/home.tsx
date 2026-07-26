@@ -278,13 +278,13 @@ function HomeDashboard() {
   });
 
   if (loading || !userId) {
-    return <div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+    return <div className="flex min-h-[100dvh] items-center justify-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
   const assigned = assignedQ.data;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background pb-6">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pb-6">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-7 w-auto" />
         <Link to="/profile" className="flex items-center gap-2 rounded-full bg-card border border-border py-1.5 pl-1.5 pr-3" aria-label="Profile">
