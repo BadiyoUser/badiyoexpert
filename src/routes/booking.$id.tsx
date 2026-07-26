@@ -209,24 +209,28 @@ function BookingScreen() {
 function AssignedControls({
   bookingId, onEnsureCodes, onReject, rejecting,
 }: { bookingId: string; onEnsureCodes: () => Promise<unknown>; onReject: (r: string) => void; rejecting: boolean }) {
-  const [step, setStep] = useState<"accept" | "start">("accept");
+  const [step, setStep] = useState<"start" | "otp">("start");
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason] = useState("");
   const [starting, setStarting] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [otp, setOtp] = useState(["", "", "", ""]);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
   const [err, setErr] = useState<string | null>(null);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
-  async function accept() {
+  async function beginStart() {
     setErr(null);
+    setPreparing(true);
     try {
       await onEnsureCodes();
-      setStep("start");
+      setStep("otp");
     } catch (e) {
       console.error("ensureCodes failed", e);
       setErr("Something went wrong, please try again.");
+    } finally {
+      setPreparing(false);
     }
   }
 
@@ -241,11 +245,17 @@ function AssignedControls({
     qc.invalidateQueries({ queryKey: ["booking", bookingId] });
   }
 
-  if (step === "accept") {
+  if (step === "start") {
     return (
       <>
         <div className="mt-auto px-6 pt-6">
-          <button onClick={accept} className="h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)]">Accept booking</button>
+          <button
+            onClick={beginStart}
+            disabled={preparing}
+            className="h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-60"
+          >
+            {preparing ? "Preparing…" : "Start service"}
+          </button>
           <button onClick={() => setShowReject(true)} className="mt-3 h-[52px] w-full rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">Reject</button>
           {err && <p className="mt-3 text-center text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
         </div>
@@ -284,7 +294,7 @@ function AssignedControls({
     <form onSubmit={verifyStart} className="mt-auto px-6 pt-6">
       <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Enter start code</p>
       <h3 className="mt-1 text-[22px] font-bold text-foreground">Ask the customer for the 4-digit code</h3>
-      <div className="mt-6 flex items-center justify-between gap-3">
+      <div className="mt-6 grid grid-cols-4 gap-3">
         {otp.map((d, i) => (
           <input key={i} ref={(el) => { inputs.current[i] = el; }} type="tel" inputMode="numeric" maxLength={1}
             value={d}
@@ -294,7 +304,7 @@ function AssignedControls({
               if (v && i < 3) inputs.current[i + 1]?.focus();
             }}
             onKeyDown={(e) => { if (e.key === "Backspace" && !otp[i] && i > 0) inputs.current[i - 1]?.focus(); }}
-            className="h-16 flex-1 rounded-[14px] border border-border bg-card text-center text-[26px] font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="h-16 w-full min-w-0 rounded-[14px] border border-border bg-card text-center text-[26px] font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         ))}
       </div>
