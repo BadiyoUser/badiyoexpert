@@ -98,14 +98,44 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data: tokens, error: tokErr } = await admin
-      .from("expert_push_tokens")
-      .select("fcm_token")
-      .eq("expert_id", body.expert_id);
-    if (tokErr) throw tokErr;
-    if (!tokens || tokens.length === 0) {
+    // Read FCM tokens from BOTH the shared `device_tokens` table (written by
+    // the current client via the shared `register_device_token` RPC — this is
+    // where every fresh registration now lands) AND the legacy
+    // `expert_push_tokens` table (populated by the older
+    // `expert-register-push-token` edge fn — kept for back-compat with any
+    // tokens that never re-registered). De-dupe by token.
+    const expertRow = await admin
+      .from("experts")
+      .select("auth_user_id")
+      .eq("id", body.expert_id)
+      .maybeSingle();
+    const authUserId = expertRow.data?.auth_user_id ?? null;
+
+    const [dtRes, eptRes] = await Promise.all([
+      authUserId
+        ? admin
+            .from("device_tokens")
+            .select("fcm_token")
+            .eq("user_type", "expert")
+            .eq("user_id", authUserId)
+        : Promise.resolve({ data: [] as { fcm_token: string }[], error: null }),
+      admin.from("expert_push_tokens").select("fcm_token").eq("expert_id", body.expert_id),
+    ]);
+    if (dtRes.error) console.error("expert-send-push device_tokens error", dtRes.error);
+    if (eptRes.error) console.error("expert-send-push expert_push_tokens error", eptRes.error);
+
+    const tokenSet = new Set<string>();
+    for (const r of dtRes.data ?? []) if (r.fcm_token) tokenSet.add(r.fcm_token);
+    for (const r of eptRes.data ?? []) if (r.fcm_token) tokenSet.add(r.fcm_token);
+    const tokens = Array.from(tokenSet).map((t) => ({ fcm_token: t }));
+
+    console.log(
+      `expert-send-push tokens: expert_id=${body.expert_id} auth_user_id=${authUserId} device_tokens=${dtRes.data?.length ?? 0} expert_push_tokens=${eptRes.data?.length ?? 0} unique=${tokens.length}`,
+    );
+    if (tokens.length === 0) {
       return json({ ok: true, sent: 0, reason: "no tokens" });
     }
+
 
     const { data: booking } = await admin
       .from("bookings")
