@@ -180,6 +180,62 @@ function ProfileScreen() {
         {expert?.address && <Row Icon={MapPin} label="Address" value={expert.address} />}
       </section>
 
+      {bgStatus && !bgStatus.unavailable && (
+        <section className="mt-6 px-6">
+          <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
+            Background availability
+          </h3>
+          <div className="rounded-[18px] border border-border bg-card p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
+                <Radio className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[15px] font-semibold text-foreground">Enable background job alerts</p>
+                <p className="mt-1 text-[13px] leading-snug text-[color:var(--text-secondary)]">
+                  Allow Badiyo to access your location even when the app is closed, so you never miss a nearby job.
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      bgStatus.background
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {bgStatus.background ? "Granted" : "Not granted"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {!bgStatus.background && (
+              <button
+                type="button"
+                onClick={enableBackgroundLocation}
+                disabled={bgBusy}
+                className="mt-4 flex h-[52px] w-full items-center justify-center rounded-[14px] bg-primary text-[16px] font-bold text-white disabled:opacity-60"
+              >
+                {bgBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Enable background alerts"}
+              </button>
+            )}
+            {bgStatus.background && (
+              <button
+                type="button"
+                onClick={openAppLocationSettings}
+                className="mt-4 flex h-[44px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-[14px] font-semibold text-foreground"
+              >
+                Manage in Settings
+              </button>
+            )}
+            {bgHint && (
+              <p className="mt-3 text-[12px] leading-snug text-[color:var(--text-secondary)]">{bgHint}</p>
+            )}
+          </div>
+        </section>
+      )}
+
+
+
       <div className="mt-auto px-6 pt-8">
         <button onClick={logout} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">
           <LogOut className="h-5 w-5" /> Log out
