@@ -210,9 +210,36 @@ function HomeDashboard() {
     if (!online || isBusy) {
       candidatesRef.current.forEach((c) => c.soundHandle.stop());
       setCandidates([]);
+      dismissedRef.current.clear();
     }
   }, [online, isBusy]);
   useEffect(() => () => stopAllNotificationLoops(), []);
+
+  // Periodic re-verification: RLS hides UPDATE events for bookings claimed by
+  // other experts (row no longer matches the public unassigned policy), so
+  // realtime never tells us they were taken. Poll the currently-displayed
+  // candidates and drop any that are no longer accepted-and-unassigned.
+  useEffect(() => {
+    if (!online || isBusy) return;
+    const interval = window.setInterval(async () => {
+      const ids = candidatesRef.current.map((c) => c.booking.id);
+      if (ids.length === 0) return;
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("id, status, assigned_expert_id")
+        .in("id", ids);
+      if (error) return;
+      const stillValid = new Set(
+        (data ?? [])
+          .filter((r) => r.status === "accepted" && r.assigned_expert_id == null)
+          .map((r) => r.id as string),
+      );
+      for (const id of ids) {
+        if (!stillValid.has(id)) removeCandidate(id);
+      }
+    }, 8_000);
+    return () => window.clearInterval(interval);
+  }, [online, isBusy, removeCandidate]);
 
   // Existing assigned-booking subscription (unchanged)
   useEffect(() => {
@@ -476,10 +503,11 @@ function HomeDashboard() {
         ))}
       </nav>
 
-      {/* Broadcast overlay stack */}
+      {/* Broadcast overlay stack — scrolls within available space above the bottom nav */}
       {candidates.length > 0 && (
         <div className="fixed inset-0 z-40 flex flex-col justify-end bg-[rgba(34,40,49,0.55)] backdrop-blur-sm">
-          <div className="mx-auto flex w-full max-w-md flex-col gap-3 p-4">
+          <div className="mx-auto flex w-full max-w-md flex-col gap-3 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+7.5rem)]" style={{ maxHeight: "100dvh" }}>
+
             {candidates.map((c) => (
               <div
                 key={c.booking.id}
