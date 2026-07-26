@@ -2,10 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { savePinForBiometric } from "@/lib/secure-pin-storage";
-import { isBiometricAvailable } from "@/lib/biometric";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
+
 
 const searchSchema = z.object({ phone: z.string().optional() });
 
