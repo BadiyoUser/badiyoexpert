@@ -30,6 +30,57 @@ function ProfileScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bgStatus, setBgStatus] = useState<BgLocationStatus | null>(null);
+  const [bgBusy, setBgBusy] = useState(false);
+  const [bgHint, setBgHint] = useState<string | null>(null);
+
+  const refreshBg = useCallback(async () => {
+    setBgStatus(await checkBackgroundLocation());
+  }, []);
+
+  useEffect(() => {
+    void refreshBg();
+    const onVis = () => { if (!document.hidden) void refreshBg(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [refreshBg]);
+
+  async function enableBackgroundLocation() {
+    setBgBusy(true);
+    setBgHint(null);
+    try {
+      const status = await checkBackgroundLocation();
+      setBgStatus(status);
+      if (status.unavailable) {
+        setBgHint("Background alerts are only available in the Android app.");
+        return;
+      }
+      if (!status.foreground) {
+        setBgHint("Turn on location from the Home screen first, then try again.");
+        return;
+      }
+      if (status.background) return;
+      if (status.mustUseSettings) {
+        setBgHint("Opening Settings — tap Permissions › Location › Allow all the time, then return here.");
+        await openAppLocationSettings();
+      } else {
+        const res = await requestBackgroundLocation();
+        if (!res.granted) {
+          setBgHint(
+            res.reason === "must_open_settings"
+              ? "Opening Settings — choose Allow all the time."
+              : "Permission not granted. You can enable it anytime from Settings.",
+          );
+          if (res.reason === "must_open_settings") await openAppLocationSettings();
+        }
+      }
+      await refreshBg();
+    } finally {
+      setBgBusy(false);
+    }
+  }
+
+
 
   async function logout() {
     await supabase.auth.signOut();
