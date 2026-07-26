@@ -14,6 +14,14 @@ export const Route = createFileRoute("/wallet")({
   component: WalletScreen,
 });
 
+// Replaces any 8+ hex-char UUID-ish token inside a reason label with a short
+// "#xxxxxx" tag (first 6 chars), matching the Command Center booking-id style.
+const UUID_RE = /\b[0-9a-f]{8}(?:-?[0-9a-f]{4}){3}-?[0-9a-f]{12}\b/gi;
+function formatReason(reason: string | null, type: "credit" | "debit" | string): string {
+  if (!reason) return type === "credit" ? "Credit" : "Debit";
+  return reason.replace(UUID_RE, (uuid) => `#${uuid.replace(/-/g, "").slice(0, 6)}`);
+}
+
 function WalletScreen() {
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
