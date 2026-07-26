@@ -150,12 +150,19 @@ function HomeDashboard() {
   // Subscribe to broadcast events while online
   useEffect(() => {
     if (!online || !expert?.id) return;
+    console.log("[broadcast][subscribe] opening channel", {
+      expertId: expert.id,
+      online,
+      isBusy,
+      radiusKm,
+    });
     const ch = supabase
       .channel(`expert-${expert.id}-broadcast`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "bookings" },
         (payload) => {
+          console.log("[broadcast][rt] INSERT", (payload.new as BroadcastBooking).id);
           void evaluateBooking(payload.new as BroadcastBooking);
         },
       )
@@ -173,11 +180,14 @@ function HomeDashboard() {
           void evaluateBooking(row);
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[broadcast][subscribe] status", status);
+      });
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [online, expert?.id, evaluateBooking, removeCandidate]);
+  }, [online, expert?.id, isBusy, radiusKm, evaluateBooking, removeCandidate]);
+
 
   // Catch-up fetch: realtime only delivers events fired AFTER subscribe. If the
   // expert opens the app (cold start / notification tap) while a booking is
