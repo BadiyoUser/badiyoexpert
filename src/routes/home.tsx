@@ -363,7 +363,13 @@ function HomeDashboard() {
           // a silent no-op — foreground-only behavior remains unchanged.
           try {
             const bg = await checkBackgroundLocation();
-            if (bg.background) await startBackgroundAvailabilityService();
+            console.log("[expert][toggle] bg check before start", bg);
+            if (bg.background) {
+              const started = await startBackgroundAvailabilityService();
+              console.log("[expert][toggle] bg service start result", started);
+            } else {
+              console.log("[expert][toggle] bg service NOT started — background permission not granted");
+            }
           } catch (e) {
             console.warn("[expert][toggle] bg service start skipped", e);
           }
