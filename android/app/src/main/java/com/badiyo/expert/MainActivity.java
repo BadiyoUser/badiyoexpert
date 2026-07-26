@@ -1,5 +1,11 @@
 package com.badiyo.expert;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.GeolocationPermissions;
 
@@ -7,30 +13,20 @@ import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 
 /**
- * Custom MainActivity that overrides the WebView's WebChromeClient to auto-grant
- * HTML5 Geolocation permission for the app's own origin.
+ * Custom MainActivity:
+ *   1. Overrides WebChromeClient to auto-grant HTML5 Geolocation for the app's
+ *      own origin (Capacitor still enforces OS-level permission via JS layer).
+ *   2. Registers the "new_booking_alerts" NotificationChannel on Android O+
+ *      so FCM pushes for new bookings ring loudly with heads-up + vibration.
  *
- * Why this exists:
- *   Android's WebView does NOT automatically grant `navigator.geolocation` to
- *   page content, even when the host app already has ACCESS_FINE_LOCATION /
- *   ACCESS_COARSE_LOCATION granted at the OS level. Without an explicit
- *   onGeolocationPermissionsShowPrompt() override, the WebView silently drops
- *   the request — `getCurrentPosition()` never fires success OR error, and the
- *   Capacitor Geolocation plugin (which delegates through the WebView layer on
- *   some device/OEM configurations) hangs indefinitely.
- *
- * This override preserves all of Capacitor's default BridgeWebChromeClient
- * behavior (file chooser, permission bridging, etc.) and only adds the
- * geolocation auto-grant, since OS-level location permission is already
- * enforced via the AndroidManifest + runtime request in the JS layer.
- *
- * IMPORTANT: The Android project itself is NOT committed to the repo. It is
- * generated locally via `npx cap add android`. Capacitor CLI creates a default
- * MainActivity.java — after `cap add android`, replace the generated file with
- * this one (or keep this file and let it win in the copy). Then run
- * `npx cap sync android` and rebuild the APK.
+ * The Android project is NOT committed to the repo — it's generated locally via
+ * `npx cap add android`. After generation, keep this MainActivity.java and run
+ * `npx cap sync android` before rebuilding the APK.
  */
 public class MainActivity extends BridgeActivity {
+
+    private static final String NEW_BOOKING_CHANNEL_ID = "new_booking_alerts";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,13 +37,45 @@ public class MainActivity extends BridgeActivity {
                 String origin,
                 GeolocationPermissions.Callback callback
             ) {
-                // OS-level location permission is already handled by Capacitor's
-                // Geolocation plugin (checkPermissions/requestPermissions). At the
-                // WebView layer we unconditionally allow the page's own origin so
-                // that navigator.geolocation calls don't hang waiting for a prompt
-                // that the WebView never surfaces to the user.
                 callback.invoke(origin, true, false);
             }
         });
+
+        createNewBookingNotificationChannel();
+    }
+
+    private void createNewBookingNotificationChannel() {
+        // NotificationChannel API is only available on Android O (API 26) and above.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager == null) return;
+
+        // Idempotent — calling createNotificationChannel with an existing ID is a no-op
+        // for the user-modifiable settings (importance, sound), but we still guard to
+        // avoid unnecessary work on every launch.
+        if (manager.getNotificationChannel(NEW_BOOKING_CHANNEL_ID) != null) return;
+
+        NotificationChannel channel = new NotificationChannel(
+            NEW_BOOKING_CHANNEL_ID,
+            "New Booking Alerts",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("Loud alerts when a new booking is available nearby.");
+
+        channel.enableVibration(true);
+        channel.setVibrationPattern(new long[] { 0, 400, 200, 400 });
+
+        Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build();
+        channel.setSound(soundUri, audioAttributes);
+
+        // Leave setBypassDnd off — requires user-granted DND access policy.
+        channel.enableLights(true);
+
+        manager.createNotificationChannel(channel);
     }
 }
