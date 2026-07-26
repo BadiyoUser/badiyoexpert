@@ -112,6 +112,7 @@ function HomeDashboard() {
   const evaluateBooking = useCallback(
     async (booking: BroadcastBooking) => {
       if (!online) return;
+      if (isBusy) return;
       if (dismissedRef.current.has(booking.id)) return;
       if (candidatesRef.current.some((c) => c.booking.id === booking.id)) return;
       if (booking.assigned_expert_id) return;
