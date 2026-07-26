@@ -63,18 +63,27 @@ async function getNativeGeolocation() {
 
 async function ensureNativePermission(): Promise<void> {
   const Geo = await getNativeGeolocation();
-  if (!Geo) return;
+  if (!Geo) { dlog("perm: web (no native plugin)"); return; }
   // Capacitor's own permission API — the OS-level grant is not enough; the
   // plugin also gates the call and will otherwise throw "application does
   // not have sufficient geolocation permissions".
-  let perm = await Geo.checkPermissions();
+  dlog("checkPermissions: start");
+  let perm = await withTimeout(Geo.checkPermissions(), 8_000, "checkPermissions");
+  dlog(`checkPermissions: ${perm.location}/${perm.coarseLocation}`);
   console.log("[expert][geo] checkPermissions →", perm);
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    dlog("requestPermissions: start");
     console.log("[expert][geo] requesting permissions…");
-    perm = await Geo.requestPermissions({ permissions: ["location", "coarseLocation"] });
+    perm = await withTimeout(
+      Geo.requestPermissions({ permissions: ["location", "coarseLocation"] }),
+      30_000,
+      "requestPermissions",
+    );
+    dlog(`requestPermissions: ${perm.location}/${perm.coarseLocation}`);
     console.log("[expert][geo] requestPermissions →", perm);
   }
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    dlog("perm: DENIED");
     const err = new Error("Location permission denied") as Error & { code?: number };
     err.code = 1;
     throw err;
