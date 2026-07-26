@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const { data: expert } = await admin
       .from("experts")
-      .select("id, name, phone")
+      .select("id, name, phone, current_lat, current_lng, location_updated_at")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
     if (!expert) return json({ error: "Expert profile not found" }, { status: 403 });
@@ -36,13 +36,37 @@ Deno.serve(async (req) => {
       notes?: string | null;
     };
 
+    // Booking id fallback: look up expert's active in_progress booking
+    let bookingId: string | null = body.booking_id ?? null;
+    if (!bookingId) {
+      const { data: activeBooking } = await admin
+        .from("bookings")
+        .select("id")
+        .eq("assigned_expert_id", expert.id)
+        .in("status", ["in_progress", "expert_assigned"])
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (activeBooking) bookingId = activeBooking.id;
+    }
+
+    // Location fallback: use expert's last known GPS from experts table
+    let lat = body.latitude ?? null;
+    let lng = body.longitude ?? null;
+    let locationSource = lat != null && lng != null ? "live" : "none";
+    if ((lat == null || lng == null) && expert.current_lat != null && expert.current_lng != null) {
+      lat = Number(expert.current_lat);
+      lng = Number(expert.current_lng);
+      locationSource = "last-known";
+    }
+
     const { data: alert, error: insErr } = await admin
       .from("emergency_alerts")
       .insert({
         expert_id: expert.id,
-        booking_id: body.booking_id ?? null,
-        latitude: body.latitude ?? null,
-        longitude: body.longitude ?? null,
+        booking_id: bookingId,
+        latitude: lat,
+        longitude: lng,
         notes: body.notes ?? null,
         status: "new",
       })
@@ -50,19 +74,20 @@ Deno.serve(async (req) => {
       .single();
     if (insErr) throw insErr;
 
-    // Fire-and-report WhatsApp alert to support.
     if (SUPPORT_PHONE) {
       const timeStr = new Date().toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         hour12: true,
       });
-      const mapsLink = body.latitude && body.longitude
-        ? `https://maps.google.com/?q=${body.latitude},${body.longitude}`
+      const mapsLink = lat != null && lng != null
+        ? `https://maps.google.com/?q=${lat},${lng}`
         : "Location unavailable";
+      const bookingParam = bookingId ? bookingId.slice(0, 8) : "N/A";
       console.log("[SOS] dispatching WhatsApp", {
         campaign: SOS_CAMPAIGN,
         support: SUPPORT_PHONE,
-        params: [expert.name, expert.phone, body.booking_id ?? "N/A", timeStr, mapsLink],
+        locationSource,
+        params: [expert.name, expert.phone, bookingParam, timeStr, mapsLink],
       });
       try {
         const waResp = await sendAiSensyTemplate({
@@ -72,7 +97,7 @@ Deno.serve(async (req) => {
           templateParams: [
             expert.name,
             expert.phone,
-            body.booking_id ?? "N/A",
+            bookingParam,
             timeStr,
             mapsLink,
           ],
