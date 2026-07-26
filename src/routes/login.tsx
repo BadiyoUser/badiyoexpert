@@ -81,7 +81,7 @@ function LoginScreen() {
           <button
             type="submit"
             disabled={!valid || loading}
-            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
+            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
           >
             {loading && <Loader2 className="h-5 w-5 animate-spin" />}
             {loading ? "Sending…" : "Send code"}

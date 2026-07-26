@@ -65,7 +65,7 @@ function SupportScreen() {
           {err && <p className="mt-2 text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
           {state === "sent" && <p className="mt-2 text-[13px] font-semibold text-primary">Thanks — our team will get back shortly.</p>}
           <button type="submit" disabled={!message.trim() || state === "sending"}
-            className="mt-3 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)] disabled:opacity-40">
+            className="mt-3 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-40">
             {state === "sending" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             {state === "sending" ? "Sending…" : "Submit ticket"}
           </button>

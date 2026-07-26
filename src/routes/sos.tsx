@@ -65,7 +65,7 @@ function SosScreen() {
           <p className="mt-2 max-w-xs text-[14px] text-[color:var(--text-secondary)]">
             Badiyo Support has been notified on WhatsApp and will contact you shortly.
           </p>
-          <a href={`tel:${support}`} className="mt-8 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)]">
+          <a href={`tel:${support}`} className="mt-8 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)]">
             <Phone className="h-5 w-5" /> Call Support
           </a>
           <button onClick={() => navigate({ to: "/home" })} className="mt-4 text-[14px] font-semibold text-[color:var(--text-secondary)]">Back to home</button>

@@ -48,7 +48,7 @@ function WalletScreen() {
       </header>
 
       <section className="px-6">
-        <div className="rounded-[18px] bg-primary p-6 text-primary-foreground shadow-[0_12px_32px_-12px_rgba(0,185,122,0.5)]">
+        <div className="rounded-[18px] bg-primary p-6 text-primary-foreground shadow-[var(--shadow-brand-md)]">
           <p className="text-[13px] font-semibold uppercase tracking-wider opacity-85">Wallet balance</p>
           <p className="mt-2 text-[36px] font-bold leading-none">{formatINR(expert?.wallet_balance ?? 0)}</p>
           <p className="mt-2 text-[13px] opacity-85">Weekly payouts processed by the Badiyo team.</p>
