@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Inbox, MapPin, Loader2, Wallet, History, Award, LifeBuoy, Clock, X, AlertTriangle } from "lucide-react";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
-import { useExpert, useExpertSession, initials, formatINR } from "@/lib/expert-client";
+import { useExpert, useExpertSession, initials } from "@/lib/expert-client";
 import {
   haversineKm,
   startNotificationLoop,
