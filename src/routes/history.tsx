@@ -38,7 +38,7 @@ function HistoryScreen() {
   const items = q.data ?? [];
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pb-8">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pb-[max(env(safe-area-inset-bottom),2rem)]">
       <header className="flex items-center gap-3 px-6 pt-6 pb-4">
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
