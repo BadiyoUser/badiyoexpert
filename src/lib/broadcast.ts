@@ -112,6 +112,7 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
   const Geo = await getNativeGeolocation();
   if (Geo) {
     await ensureNativePermission();
+    dlog("getCurrentPosition: started (native)");
     console.log("[expert][geo] getCurrentPosition (native) start");
     try {
       const pos = await withTimeout(
@@ -123,13 +124,16 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
         15_000,
         "getCurrentPosition",
       );
+      dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
       console.log("[expert][geo] getCurrentPosition (native) success");
       return pos as unknown as GeolocationPosition;
     } catch (err) {
+      dlog(`getCurrentPosition: FAILED ${(err as Error).message}`);
       console.warn("[expert][geo] getCurrentPosition (native) failed", err);
       throw err;
     }
   }
+  dlog("getCurrentPosition: started (web)");
   return withTimeout(
     new Promise<GeolocationPosition>((resolve, reject) => {
       if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -138,8 +142,16 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
       }
       console.log("[expert][geo] getCurrentPosition (web) start");
       navigator.geolocation.getCurrentPosition(
-        (pos) => { console.log("[expert][geo] getCurrentPosition (web) success"); resolve(pos); },
-        (err) => { console.warn("[expert][geo] getCurrentPosition (web) error", err); reject(err); },
+        (pos) => {
+          dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
+          console.log("[expert][geo] getCurrentPosition (web) success");
+          resolve(pos);
+        },
+        (err) => {
+          dlog(`getCurrentPosition: FAILED ${err.message}`);
+          console.warn("[expert][geo] getCurrentPosition (web) error", err);
+          reject(err);
+        },
         { enableHighAccuracy: true, maximumAge: 15_000, timeout: 15_000 },
       );
     }),
