@@ -171,22 +171,24 @@ function BookingScreen() {
             <img src={addressQ.data.landmark_photo_url} alt="Landmark" className="mt-4 w-full rounded-[14px] object-cover aspect-video" />
           )}
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {addressQ.data?.latitude && addressQ.data?.longitude && (
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${addressQ.data.latitude},${addressQ.data.longitude}`}
-                target="_blank" rel="noreferrer"
-                className="flex h-11 items-center justify-center gap-1 rounded-[14px] bg-primary text-[14px] font-bold text-primary-foreground"
-              >
-                <Navigation2 className="h-4 w-4" /> Navigate
-              </a>
-            )}
-            {customerQ.data?.phone && (
-              <a href={`tel:${customerQ.data.phone}`} className="flex h-11 items-center justify-center gap-1 rounded-[14px] border border-border bg-card text-[14px] font-bold text-foreground">
-                <Phone className="h-4 w-4" /> Call
-              </a>
-            )}
-          </div>
+          {booking.status !== "in_progress" && booking.status !== "completed" && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {addressQ.data?.latitude && addressQ.data?.longitude && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${addressQ.data.latitude},${addressQ.data.longitude}`}
+                  target="_blank" rel="noreferrer"
+                  className="flex h-11 items-center justify-center gap-1 rounded-[14px] bg-primary text-[14px] font-bold text-primary-foreground"
+                >
+                  <Navigation2 className="h-4 w-4" /> Navigate
+                </a>
+              )}
+              {customerQ.data?.phone && (
+                <a href={`tel:${customerQ.data.phone}`} className="flex h-11 items-center justify-center gap-1 rounded-[14px] border border-border bg-card text-[14px] font-bold text-foreground">
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
