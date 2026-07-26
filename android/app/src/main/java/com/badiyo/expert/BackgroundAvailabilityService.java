@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
@@ -18,15 +19,16 @@ import androidx.core.content.ContextCompat;
  * Phase 2: Foreground service skeleton that keeps the expert "online" while the
  * app is backgrounded or swiped away.
  *
- * This phase only maintains the sticky foreground notification lifecycle —
- * Phase 3 will add the actual periodic location updates from inside this
- * service (fused location provider + POST to Supabase).
- *
- * Started/stopped from JS via BackgroundLocationPlugin.start/stopBackgroundService.
- * If background location permission is revoked at any point, the service
- * self-stops so we never claim to be "online" without eligibility.
+ * IMPORTANT — Android 8+ contract: when started via
+ * Context.startForegroundService(), the service MUST call startForeground()
+ * within ~5s or the OS crashes the app with
+ * ForegroundServiceDidNotStartInTimeException. Every code path in
+ * onStartCommand() therefore calls startForeground() first, THEN decides
+ * whether to stop.
  */
 public class BackgroundAvailabilityService extends Service {
+
+    private static final String TAG = "BadiyoBgSvc";
 
     /** Distinct low-importance channel — persistent status must be silent. */
     static final String STATUS_CHANNEL_ID = "expert_online_status";
@@ -38,27 +40,54 @@ public class BackgroundAvailabilityService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate");
+        // Channel MUST exist before startForeground() on API 26+, otherwise
+        // startForeground throws and the service dies silently.
         ensureStatusChannel();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+        String action = intent != null ? intent.getAction() : null;
+        Log.d(TAG, "onStartCommand action=" + action + " sdk=" + Build.VERSION.SDK_INT);
+
+        // Contract-safe: promote to foreground FIRST on every invocation, then
+        // decide whether to stop. Skipping this on the STOP path or the
+        // "permission revoked" path would crash the process on Android 8+.
+        try {
+            Log.d(TAG, "calling startForeground");
+            startForeground(NOTIFICATION_ID, buildStatusNotification());
+            Log.d(TAG, "startForeground OK");
+        } catch (Throwable t) {
+            Log.e(TAG, "startForeground FAILED", t);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
+        if (ACTION_STOP.equals(action)) {
+            Log.d(TAG, "STOP requested — stopping self");
             stopSelfInternal();
             return START_NOT_STICKY;
         }
 
         // Guard: if background location permission was revoked between
-        // start-request and service actually starting, bail out cleanly.
+        // start-request and the service actually starting, bail out cleanly —
+        // but only AFTER startForeground() has satisfied the OS contract.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundLocation()) {
+            Log.w(TAG, "background location permission missing — stopping self");
             stopSelfInternal();
             return START_NOT_STICKY;
         }
 
-        startForeground(NOTIFICATION_ID, buildStatusNotification());
         // START_STICKY so Android relaunches us if killed for memory pressure —
         // the expert opted in to background availability.
         return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "onDestroy");
+        super.onDestroy();
     }
 
     @Override
@@ -97,7 +126,14 @@ public class BackgroundAvailabilityService extends Service {
     private void ensureStatusChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager manager = getSystemService(NotificationManager.class);
-        if (manager == null || manager.getNotificationChannel(STATUS_CHANNEL_ID) != null) return;
+        if (manager == null) {
+            Log.w(TAG, "NotificationManager null — cannot create channel");
+            return;
+        }
+        if (manager.getNotificationChannel(STATUS_CHANNEL_ID) != null) {
+            Log.d(TAG, "status channel already exists");
+            return;
+        }
 
         NotificationChannel channel = new NotificationChannel(
             STATUS_CHANNEL_ID,
@@ -109,6 +145,7 @@ public class BackgroundAvailabilityService extends Service {
         channel.enableVibration(false);
         channel.setSound(null, null);
         manager.createNotificationChannel(channel);
+        Log.d(TAG, "status channel created");
     }
 
     private boolean hasBackgroundLocation() {
