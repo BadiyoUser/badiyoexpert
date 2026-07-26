@@ -111,16 +111,22 @@ public class BackgroundAvailabilityService extends Service {
             | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, openApp, piFlags);
 
-        return new NotificationCompat.Builder(this, STATUS_CHANNEL_ID)
+        Notification n = new NotificationCompat.Builder(this, STATUS_CHANNEL_ID)
             .setContentTitle("Badiyo Expert — Online")
             .setContentText("You're receiving nearby job alerts")
             .setSmallIcon(android.R.drawable.presence_online)
             .setOngoing(true)
+            .setAutoCancel(false)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setContentIntent(contentIntent)
             .build();
+        // Belt-and-suspenders: FLAG_ONGOING_EVENT + FLAG_NO_CLEAR make the
+        // notification non-swipeable across OEM launchers. setOngoing(true)
+        // alone is honored inconsistently on some Android 13+ skins.
+        n.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR;
+        return n;
     }
 
     private void ensureStatusChannel() {
