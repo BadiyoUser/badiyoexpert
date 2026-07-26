@@ -196,14 +196,18 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   }, []);
 
   const ensureFix = useCallback(async (): Promise<Coords> => {
+    dlog("ensureFix: start");
     setState((prev) => (prev.status === "ok" ? prev : { status: "requesting" }));
     try {
       const pos = await getCurrentPositionOnce();
       const coords = applyPosition(pos);
-      await pushLocation(coords);
+      dlog("pushLocation: start");
+      await withTimeout(pushLocation(coords), 10_000, "pushLocation");
+      dlog("pushLocation: ok");
       setLastPushedAt(Date.now());
       return coords;
     } catch (err) {
+      dlog(`ensureFix: FAILED ${(err as Error).message}`);
       applyError(err as GeolocationPositionError | Error);
       const message =
         (err as GeolocationPositionError).code === 1
