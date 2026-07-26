@@ -243,7 +243,7 @@ function AssignedControls({
     return (
       <>
         <div className="mt-auto px-6 pt-6">
-          <button onClick={accept} className="h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)]">Accept booking</button>
+          <button onClick={accept} className="h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)]">Accept booking</button>
           <button onClick={() => setShowReject(true)} className="mt-3 h-[52px] w-full rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">Reject</button>
           {err && <p className="mt-3 text-center text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
         </div>
@@ -298,7 +298,7 @@ function AssignedControls({
       </div>
       {err && <p className="mt-3 text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
       <button type="submit" disabled={starting || otp.join("").length !== 4}
-        className="mt-6 h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)] disabled:opacity-40">
+        className="mt-6 h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-40">
         {starting ? "Starting…" : "Start service"}
       </button>
     </form>
@@ -358,7 +358,7 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
         </div>
         {err && <p className="mt-3 text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
         <button type="submit" disabled={ending || otp.join("").length !== 4}
-          className="mt-6 h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)] disabled:opacity-40">
+          className="mt-6 h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-40">
           {ending ? "Completing…" : "Complete service"}
         </button>
       </form>

@@ -31,7 +31,7 @@ function NotRegistered() {
         <div className="mt-10 flex w-full flex-col gap-3">
           <a
             href={`tel:${support}`}
-            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,185,122,0.5)]"
+            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)]"
           >
             <Phone className="h-5 w-5" /> Call Badiyo Team
           </a>
