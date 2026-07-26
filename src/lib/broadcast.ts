@@ -1,6 +1,8 @@
 // Utilities for the Home-screen broadcast experience.
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+// TEMPORARY: on-screen debug overlay for diagnosing Online-toggle hangs.
+import { dlog } from "@/lib/debug-log";
 
 export type Coords = { lat: number; lng: number };
 
@@ -61,18 +63,27 @@ async function getNativeGeolocation() {
 
 async function ensureNativePermission(): Promise<void> {
   const Geo = await getNativeGeolocation();
-  if (!Geo) return;
+  if (!Geo) { dlog("perm: web (no native plugin)"); return; }
   // Capacitor's own permission API — the OS-level grant is not enough; the
   // plugin also gates the call and will otherwise throw "application does
   // not have sufficient geolocation permissions".
-  let perm = await Geo.checkPermissions();
+  dlog("checkPermissions: start");
+  let perm = await withTimeout(Geo.checkPermissions(), 8_000, "checkPermissions");
+  dlog(`checkPermissions: ${perm.location}/${perm.coarseLocation}`);
   console.log("[expert][geo] checkPermissions →", perm);
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    dlog("requestPermissions: start");
     console.log("[expert][geo] requesting permissions…");
-    perm = await Geo.requestPermissions({ permissions: ["location", "coarseLocation"] });
+    perm = await withTimeout(
+      Geo.requestPermissions({ permissions: ["location", "coarseLocation"] }),
+      30_000,
+      "requestPermissions",
+    );
+    dlog(`requestPermissions: ${perm.location}/${perm.coarseLocation}`);
     console.log("[expert][geo] requestPermissions →", perm);
   }
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    dlog("perm: DENIED");
     const err = new Error("Location permission denied") as Error & { code?: number };
     err.code = 1;
     throw err;
@@ -85,6 +96,7 @@ async function ensureNativePermission(): Promise<void> {
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => {
+      dlog(`withTimeout FIRED: ${label} (${ms}ms)`);
       const err = new Error(`${label} timed out after ${ms}ms`) as Error & { code?: number };
       err.code = 3; // TIMEOUT
       reject(err);
@@ -100,6 +112,7 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
   const Geo = await getNativeGeolocation();
   if (Geo) {
     await ensureNativePermission();
+    dlog("getCurrentPosition: started (native)");
     console.log("[expert][geo] getCurrentPosition (native) start");
     try {
       const pos = await withTimeout(
@@ -111,13 +124,16 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
         15_000,
         "getCurrentPosition",
       );
+      dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
       console.log("[expert][geo] getCurrentPosition (native) success");
       return pos as unknown as GeolocationPosition;
     } catch (err) {
+      dlog(`getCurrentPosition: FAILED ${(err as Error).message}`);
       console.warn("[expert][geo] getCurrentPosition (native) failed", err);
       throw err;
     }
   }
+  dlog("getCurrentPosition: started (web)");
   return withTimeout(
     new Promise<GeolocationPosition>((resolve, reject) => {
       if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -126,8 +142,16 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
       }
       console.log("[expert][geo] getCurrentPosition (web) start");
       navigator.geolocation.getCurrentPosition(
-        (pos) => { console.log("[expert][geo] getCurrentPosition (web) success"); resolve(pos); },
-        (err) => { console.warn("[expert][geo] getCurrentPosition (web) error", err); reject(err); },
+        (pos) => {
+          dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
+          console.log("[expert][geo] getCurrentPosition (web) success");
+          resolve(pos);
+        },
+        (err) => {
+          dlog(`getCurrentPosition: FAILED ${err.message}`);
+          console.warn("[expert][geo] getCurrentPosition (web) error", err);
+          reject(err);
+        },
         { enableHighAccuracy: true, maximumAge: 15_000, timeout: 15_000 },
       );
     }),
@@ -172,14 +196,18 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   }, []);
 
   const ensureFix = useCallback(async (): Promise<Coords> => {
+    dlog("ensureFix: start");
     setState((prev) => (prev.status === "ok" ? prev : { status: "requesting" }));
     try {
       const pos = await getCurrentPositionOnce();
       const coords = applyPosition(pos);
-      await pushLocation(coords);
+      dlog("pushLocation: start");
+      await withTimeout(pushLocation(coords), 10_000, "pushLocation");
+      dlog("pushLocation: ok");
       setLastPushedAt(Date.now());
       return coords;
     } catch (err) {
+      dlog(`ensureFix: FAILED ${(err as Error).message}`);
       applyError(err as GeolocationPositionError | Error);
       const message =
         (err as GeolocationPositionError).code === 1
