@@ -68,8 +68,13 @@ function getCurrentPositionOnce(): Promise<GeolocationPosition> {
 export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   const [state, setState] = useState<LocationState>({ status: "idle" });
   const [lastPushedAt, setLastPushedAt] = useState<number | null>(null);
+  const [isHidden, setIsHidden] = useState<boolean>(
+    typeof document !== "undefined" ? document.hidden : false,
+  );
   const stateRef = useRef(state);
   stateRef.current = state;
+  const hiddenRef = useRef(isHidden);
+  hiddenRef.current = isHidden;
 
   const applyPosition = useCallback((pos: GeolocationPosition) => {
     const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -78,6 +83,10 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
   }, []);
 
   const applyError = useCallback((err: GeolocationPositionError | Error) => {
+    // Suppress geolocation errors while backgrounded — browsers throttle or
+    // time out watchPosition/getCurrentPosition when the tab is hidden, and
+    // that's expected OS behavior, not a genuine failure.
+    if (hiddenRef.current) return;
     if ("code" in err && err.code === err.PERMISSION_DENIED) {
       setState({ status: "denied" });
       return;
@@ -106,6 +115,14 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
     }
   }, [applyPosition, applyError]);
 
+  // Track page visibility so we can pause tracking while hidden.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVis = () => setIsHidden(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
   useEffect(() => {
     if (!enabled) {
       setState({ status: "idle" });
@@ -116,6 +133,8 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
       setState({ status: "unavailable", message: "Geolocation not supported on this device." });
       return;
     }
+    // Pause tracking while the tab is hidden — keep last-known state intact.
+    if (isHidden) return;
 
     let cancelled = false;
 
@@ -130,6 +149,13 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
       if (cancelled) return;
       applyError(err);
     };
+
+    // On becoming visible (or first enable), immediately refresh the fix.
+    navigator.geolocation.getCurrentPosition(onPosition, onError, {
+      enableHighAccuracy: true,
+      maximumAge: 30_000,
+      timeout: 20_000,
+    });
 
     const watchId = navigator.geolocation.watchPosition(onPosition, onError, {
       enableHighAccuracy: true,
@@ -150,9 +176,9 @@ export function useExpertLocationTracking(enabled: boolean): LocationTracker {
       navigator.geolocation.clearWatch(watchId);
       window.clearInterval(interval);
     };
-  }, [enabled, applyPosition, applyError]);
+  }, [enabled, isHidden, applyPosition, applyError]);
 
-  return { state, lastPushedAt, ensureFix };
+  return { state, lastPushedAt, isHidden, ensureFix };
 }
 
 // -----------------------------------------------------------------------------
