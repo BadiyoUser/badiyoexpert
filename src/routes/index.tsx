@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import badiyoWhite from "@/assets/badiyo-white.png.asset.json";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   component: Splash,
@@ -10,10 +11,28 @@ function Splash() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      navigate({ to: "/login" });
-    }, 1500);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    const start = Date.now();
+
+    (async () => {
+      let hasSession = false;
+      try {
+        const { data } = await supabase.auth.getSession();
+        hasSession = !!data.session;
+      } catch (err) {
+        console.warn("[splash] getSession failed", err);
+      }
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, 1200 - elapsed);
+      setTimeout(() => {
+        if (cancelled) return;
+        navigate({ to: hasSession ? "/home" : "/login", replace: true });
+      }, wait);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   return (
