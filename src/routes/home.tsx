@@ -454,16 +454,26 @@ function HomeDashboard() {
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+6rem)]">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
         <img src={badiyoGreen.url} alt="Badiyo" className="h-7 w-auto" />
-        <Link to="/profile" className="rounded-full" aria-label="Profile">
-          {expert?.photo_url ? (
-            <img src={expert.photo_url} alt={expert.name ?? "Expert"} className="h-9 w-9 rounded-full object-cover border border-border" />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-charcoal)] text-[13px] font-bold text-white">
-              {initials(expert?.name)}
-            </div>
-          )}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/sos"
+            aria-label="Emergency SOS"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-destructive)]/10 text-[color:var(--color-destructive)] active:scale-95 transition"
+          >
+            <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={2.4} />
+          </Link>
+          <Link to="/profile" className="rounded-full" aria-label="Profile">
+            {expert?.photo_url ? (
+              <img src={expert.photo_url} alt={expert.name ?? "Expert"} className="h-9 w-9 rounded-full object-cover border border-border" />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-charcoal)] text-[13px] font-bold text-white">
+                {initials(expert?.name)}
+              </div>
+            )}
+          </Link>
+        </div>
       </header>
+
 
       <section className="px-6">
         <div
