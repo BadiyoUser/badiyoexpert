@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, Delete } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { savePinForBiometric } from "@/lib/secure-pin-storage";
 import { isBiometricAvailable } from "@/lib/biometric";
+import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
 
 const searchSchema = z.object({ phone: z.string().optional() });
@@ -24,145 +24,128 @@ function SetPinScreen() {
   const { phone } = Route.useSearch();
   const navigate = useNavigate();
   const [step, setStep] = useState<"enter" | "confirm">("enter");
-  const [pin, setPin] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [pin1, setPin1] = useState<string[]>(["", "", "", ""]);
+  const [pin2, setPin2] = useState<string[]>(["", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const inputs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const value = step === "enter" ? pin : confirm;
-  const setValue = step === "enter" ? setPin : setConfirm;
+  const active = step === "enter" ? pin1 : pin2;
+  const setActive = step === "enter" ? setPin1 : setPin2;
 
-  function press(d: string) {
+  useEffect(() => {
+    if (!phone) navigate({ to: "/login" });
+  }, [phone, navigate]);
+
+  useEffect(() => {
+    inputs.current[0]?.focus();
+  }, [step]);
+
+  const handleChange = (i: number, val: string) => {
     if (saving) return;
+    const v = val.replace(/\D/g, "").slice(-1);
+    const next = [...active];
+    next[i] = v;
+    setActive(next);
     setError(null);
-    if (value.length >= 4) return;
-    setValue(value + d);
-  }
-  function back() {
-    setError(null);
-    setValue(value.slice(0, -1));
-  }
-
-  async function next() {
-    if (step === "enter") {
-      if (pin.length !== 4) return;
-      setStep("confirm");
-      return;
+    if (v && i < 3) inputs.current[i + 1]?.focus();
+    if (next.every((d) => d)) {
+      const code = next.join("");
+      if (step === "enter") {
+        setStep("confirm");
+      } else {
+        void submit(pin1.join(""), code);
+      }
     }
-    if (confirm.length !== 4) return;
-    if (pin !== confirm) {
+  };
+
+  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !active[i] && i > 0) inputs.current[i - 1]?.focus();
+  };
+
+  const submit = async (first: string, second: string) => {
+    setError(null);
+    if (first !== second) {
       setError("PINs don't match. Try again.");
-      setConfirm("");
+      setPin1(["", "", "", ""]);
+      setPin2(["", "", "", ""]);
+      setStep("enter");
       return;
     }
     setSaving(true);
     try {
-      const { error: rpcErr } = await supabase.rpc("set_login_pin", { p_pin: pin });
+      const { error: rpcErr } = await supabase.rpc("set_login_pin", { p_pin: first });
       if (rpcErr) throw rpcErr;
-      // Store PIN locally so biometrics can unlock it on this device.
       if (phone) {
         try {
           const bio = await isBiometricAvailable();
-          if (bio.available) await savePinForBiometric(phone, pin);
+          if (bio.available) await savePinForBiometric(phone, first);
         } catch {
-          // non-fatal
+          /* non-fatal */
         }
       }
       toast.success("PIN set. Use biometrics to sign in next time.");
       navigate({ to: "/home" });
     } catch (err) {
       setError((err as Error).message ?? "Could not save PIN");
+      setPin1(["", "", "", ""]);
+      setPin2(["", "", "", ""]);
+      setStep("enter");
+    } finally {
       setSaving(false);
     }
-  }
-
-  const showConfirm = step === "confirm";
+  };
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.5rem)]">
-      <div className="mt-6">
-        <h1 className="text-[28px] font-bold leading-tight text-foreground">
-          {showConfirm ? "Confirm your PIN" : "Set your 4-digit PIN"}
-        </h1>
-        <p className="mt-2 text-[15px] text-[color:var(--text-secondary)]">
-          {showConfirm
-            ? "Re-enter the same PIN to confirm."
-            : "You'll use this PIN (or biometrics) to sign in on this device."}
+    <main className="min-h-[100dvh] w-full bg-background">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] pt-[max(env(safe-area-inset-top),4rem)]">
+        <div className="flex justify-center">
+          <img src={badiyoGreen.url} alt="Badiyo Expert" className="h-10 w-auto" />
+        </div>
+
+        <div className="mt-10 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {step === "enter" ? "Set your 4-digit PIN" : "Confirm your PIN"}
+          </h1>
+          <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            {step === "enter"
+              ? "You'll use this (or biometrics) to sign in next time."
+              : "Re-enter the same 4 digits."}
+          </p>
+        </div>
+
+        <div className="mt-10 flex justify-center gap-3">
+          {active.map((d, i) => (
+            <input
+              key={`${step}-${i}`}
+              ref={(el) => {
+                inputs.current[i] = el;
+              }}
+              type="tel"
+              inputMode="numeric"
+              maxLength={1}
+              value={d ? "•" : ""}
+              disabled={saving}
+              onChange={(e) => handleChange(i, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              className="h-16 w-14 rounded-[14px] border-2 border-border bg-card text-center text-3xl font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-[color:var(--primary)]/20 disabled:opacity-50"
+            />
+          ))}
+        </div>
+
+        {error && (
+          <p className="mt-4 text-center text-sm font-medium text-[color:var(--color-destructive)]">
+            {error}
+          </p>
+        )}
+        {saving && (
+          <p className="mt-4 text-center text-sm text-[color:var(--text-secondary)]">Saving…</p>
+        )}
+
+        <p className="mt-auto pt-10 text-center text-xs text-[color:var(--text-secondary)]">
+          Your PIN is stored securely on this device.
         </p>
       </div>
-
-      <div className="mt-10 grid grid-cols-4 gap-3">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex h-16 items-center justify-center rounded-[14px] border border-border bg-card text-[26px] font-bold text-foreground"
-          >
-            {value[i] ? "●" : ""}
-          </div>
-        ))}
-      </div>
-
-      {error && (
-        <p className="mt-4 text-[13px] font-semibold text-[color:var(--color-destructive)]">{error}</p>
-      )}
-
-      <Keypad onPress={press} onBack={back} disabled={saving} />
-
-      <div className="mt-6">
-        <button
-          type="button"
-          onClick={next}
-          disabled={value.length !== 4 || saving}
-          className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
-        >
-          {saving && <Loader2 className="h-5 w-5 animate-spin" />}
-          {showConfirm ? (saving ? "Saving…" : "Save PIN") : "Continue"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export function Keypad({
-  onPress,
-  onBack,
-  disabled,
-}: {
-  onPress: (d: string) => void;
-  onBack: () => void;
-  disabled?: boolean;
-}) {
-  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"] as const;
-  return (
-    <div className="mt-8 grid grid-cols-3 gap-3">
-      {keys.map((k, i) => {
-        if (k === "") return <div key={i} />;
-        if (k === "back") {
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={onBack}
-              disabled={disabled}
-              className="flex h-16 items-center justify-center rounded-[14px] text-foreground active:bg-muted"
-              aria-label="Delete"
-            >
-              <Delete className="h-6 w-6" />
-            </button>
-          );
-        }
-        return (
-          <button
-            key={i}
-            type="button"
-            onClick={() => onPress(k)}
-            disabled={disabled}
-            className="flex h-16 items-center justify-center rounded-[14px] bg-card border border-border text-[24px] font-semibold text-foreground active:bg-muted"
-          >
-            {k}
-          </button>
-        );
-      })}
-    </div>
+    </main>
   );
 }

@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, Loader2, Fingerprint } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Fingerprint } from "lucide-react";
 import { z } from "zod";
 import { expertApi } from "@/lib/expert-client";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import {
   savePinForBiometric,
 } from "@/lib/secure-pin-storage";
 import { isBiometricAvailable, promptBiometric } from "@/lib/biometric";
-import { Keypad } from "./set-pin";
+import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
 
 const searchSchema = z.object({ phone: z.string().optional() });
@@ -30,102 +30,114 @@ export const Route = createFileRoute("/pin")({
 function PinScreen() {
   const { phone } = Route.useSearch();
   const navigate = useNavigate();
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [digits, setDigits] = useState<string[]>(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
-  const [lockedFor, setLockedFor] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState<number>(0);
+  const [biometricTried, setBiometricTried] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const [bioAvailable, setBioAvailable] = useState(false);
-  const attemptedBioRef = useRef(false);
+  const inputs = useRef<Array<HTMLInputElement | null>>([]);
+  const autoTriedRef = useRef(false);
 
   useEffect(() => {
     if (!phone) navigate({ to: "/login" });
   }, [phone, navigate]);
 
-  // Countdown for lockout.
-  useEffect(() => {
-    if (lockedFor === null || lockedFor <= 0) return;
-    const t = setTimeout(() => setLockedFor((s) => (s === null ? null : s - 1)), 1000);
-    return () => clearTimeout(t);
-  }, [lockedFor]);
+  const submit = useCallback(
+    async (code: string, opts: { silent?: boolean } = {}) => {
+      if (!phone || loading) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await expertApi.verifyPin(phone, code);
+        const { error: vErr } = await supabase.auth.verifyOtp({
+          token_hash: res.token_hash,
+          type: "magiclink",
+        });
+        if (vErr) throw vErr;
+        try {
+          await savePinForBiometric(phone, code);
+        } catch {
+          /* non-fatal */
+        }
+        navigate({ to: "/home" });
+      } catch (err) {
+        const msg = (err as Error).message ?? "Login failed";
+        const match = msg.match(/(\d+)\s*seconds?/i);
+        if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("locked")) {
+          setLocked(match ? Number(match[1]) : 15 * 60);
+        }
+        setDigits(["", "", "", ""]);
+        setTimeout(() => inputs.current[0]?.focus(), 50);
+        if (!opts.silent) {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [phone, loading, navigate],
+  );
 
-  // Biometric-first: auto-prompt on mount if hardware + stored pin exist.
+  // Lockout countdown
   useEffect(() => {
-    if (!phone || attemptedBioRef.current) return;
-    attemptedBioRef.current = true;
+    if (locked <= 0) return;
+    const t = setTimeout(() => setLocked((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [locked]);
+
+  // Biometric-first: auto-prompt on mount
+  useEffect(() => {
+    if (!phone || autoTriedRef.current) return;
+    autoTriedRef.current = true;
     (async () => {
       const bio = await isBiometricAvailable();
       setBioAvailable(bio.available);
-      if (!bio.available) return;
-      const hasStored = await hasStoredPinForPhone(phone);
-      if (!hasStored) return;
-      await tryBiometric();
+      const stored = await hasStoredPinForPhone(phone);
+      if (!bio.available || !stored) {
+        setBiometricTried(true);
+        setShowManual(true);
+        setTimeout(() => inputs.current[0]?.focus(), 50);
+        return;
+      }
+      const res = await promptBiometric("Unlock Badiyo Expert");
+      setBiometricTried(true);
+      if (res.ok) {
+        const storedPin = await readPinForBiometric(phone);
+        if (storedPin) {
+          await submit(storedPin, { silent: true });
+          return;
+        }
+      }
+      setShowManual(true);
+      setTimeout(() => inputs.current[0]?.focus(), 50);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phone]);
+  }, [phone, submit]);
 
-  async function tryBiometric() {
+  const handleChange = (i: number, val: string) => {
+    if (locked > 0 || loading) return;
+    const v = val.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[i] = v;
+    setDigits(next);
+    setError(null);
+    if (v && i < 3) inputs.current[i + 1]?.focus();
+    if (next.every((d) => d)) void submit(next.join(""));
+  };
+
+  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !digits[i] && i > 0) inputs.current[i - 1]?.focus();
+  };
+
+  const retryBiometric = async () => {
     if (!phone) return;
+    const stored = await readPinForBiometric(phone);
+    if (!stored) return;
     const res = await promptBiometric("Unlock Badiyo Expert");
-    if (!res.ok) return;
-    const storedPin = await readPinForBiometric(phone);
-    if (!storedPin) return;
-    await submitPin(storedPin, { silent: true });
-  }
-
-  async function submitPin(candidate: string, opts: { silent?: boolean } = {}) {
-    if (!phone || loading) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await expertApi.verifyPin(phone, candidate);
-      const { error: vErr } = await supabase.auth.verifyOtp({
-        token_hash: res.token_hash,
-        type: "magiclink",
-      });
-      if (vErr) throw vErr;
-      // Refresh stored PIN so future biometric unlocks work.
-      try {
-        await savePinForBiometric(phone, candidate);
-      } catch {
-        /* non-fatal */
-      }
-      navigate({ to: "/home" });
-    } catch (err) {
-      const msg = (err as Error).message ?? "Login failed";
-      if (!opts.silent) setError(msg);
-      // Parse lockout: fetch the response detail via toast fallback.
-      // The edge fn sets retry_after_seconds when locked (HTTP 429).
-      const match = msg.match(/(\d+)\s*seconds?/i);
-      if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("locked")) {
-        // Attempt to parse retry seconds from a re-thrown payload.
-        // Without the raw payload, default to 15 min.
-        setLockedFor(match ? Number(match[1]) : 15 * 60);
-      }
-      setPin("");
-      if (!opts.silent) toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function press(d: string) {
-    if (loading || lockedFor) return;
-    setError(null);
-    setPin((prev) => {
-      if (prev.length >= 4) return prev;
-      const next = prev + d;
-      if (next.length === 4) {
-        // fire and forget
-        setTimeout(() => submitPin(next), 50);
-      }
-      return next;
-    });
-  }
-  function back() {
-    if (loading) return;
-    setError(null);
-    setPin((p) => p.slice(0, -1));
-  }
+    if (res.ok) void submit(stored, { silent: true });
+  };
 
   async function fallbackToOtp() {
     if (!phone) return;
@@ -142,73 +154,108 @@ function PinScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.5rem)]">
-      <Link
-        to="/login"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted"
-        aria-label="Back"
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </Link>
+    <main className="min-h-[100dvh] w-full bg-background">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] pt-[max(env(safe-area-inset-top),4rem)]">
+        <div className="flex justify-center">
+          <img src={badiyoGreen.url} alt="Badiyo Expert" className="h-10 w-auto" />
+        </div>
 
-      <div className="mt-6">
-        <h1 className="text-[28px] font-bold leading-tight text-foreground">Enter your PIN</h1>
-        <p className="mt-2 text-[15px] text-[color:var(--text-secondary)]">
-          Signing in as <span className="font-semibold text-foreground">+91 {phone}</span>
-        </p>
-      </div>
+        <div className="mt-10 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
+          <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            Sign in as{" "}
+            <span className="font-semibold text-foreground">+91 {phone}</span>
+          </p>
+        </div>
 
-      <div className="mt-10 grid grid-cols-4 gap-3">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex h-16 items-center justify-center rounded-[14px] border border-border bg-card text-[26px] font-bold text-foreground"
-          >
-            {pin[i] ? "●" : ""}
+        {!biometricTried && (
+          <div className="mt-10 flex flex-col items-center gap-3 text-[color:var(--text-secondary)]">
+            <Fingerprint className="h-14 w-14 text-primary" />
+            <p className="text-sm">Waiting for biometric…</p>
           </div>
-        ))}
-      </div>
+        )}
 
-      {error && (
-        <p className="mt-4 text-[13px] font-semibold text-[color:var(--color-destructive)]">{error}</p>
-      )}
+        {biometricTried && showManual && (
+          <>
+            <p className="mt-10 text-center text-sm font-semibold text-foreground">
+              Enter your 4-digit PIN
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              {digits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={(el) => {
+                    inputs.current[i] = el;
+                  }}
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={d ? "•" : ""}
+                  disabled={locked > 0 || loading}
+                  onChange={(e) => handleChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  className="h-16 w-14 rounded-[14px] border-2 border-border bg-card text-center text-3xl font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-[color:var(--primary)]/20 disabled:opacity-50"
+                />
+              ))}
+            </div>
+            {bioAvailable && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={retryBiometric}
+                  className="flex items-center gap-2 text-sm font-semibold text-primary"
+                >
+                  <Fingerprint className="h-4 w-4" /> Use biometric
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
-      {lockedFor !== null && lockedFor > 0 && (
-        <p className="mt-2 text-[13px] font-semibold text-[color:var(--color-destructive)]">
-          Locked. Try again in {Math.floor(lockedFor / 60)}:
-          {String(lockedFor % 60).padStart(2, "0")}
-        </p>
-      )}
+        {error && (
+          <p className="mt-4 text-center text-sm font-medium text-[color:var(--color-destructive)]">
+            {error}
+          </p>
+        )}
+        {locked > 0 && (
+          <p className="mt-2 text-center text-xs text-[color:var(--text-secondary)]">
+            Try again in {Math.ceil(locked / 60)} min ({locked}s)
+          </p>
+        )}
+        {loading && (
+          <p className="mt-4 text-center text-sm text-[color:var(--text-secondary)]">Verifying…</p>
+        )}
 
-      <Keypad onPress={press} onBack={back} disabled={loading || !!lockedFor} />
-
-      <div className="mt-6 flex flex-col gap-3">
-        {bioAvailable && (
+        <div className="mt-8 flex flex-col items-center gap-3 text-sm">
           <button
             type="button"
-            onClick={tryBiometric}
+            onClick={fallbackToOtp}
             disabled={loading}
-            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-border bg-card text-[15px] font-bold text-foreground active:bg-muted"
+            className="font-semibold text-primary disabled:opacity-50"
           >
-            <Fingerprint className="h-5 w-5" /> Use biometrics
+            Forgot PIN?
           </button>
-        )}
+          <button
+            type="button"
+            onClick={fallbackToOtp}
+            disabled={loading}
+            className="font-semibold text-[color:var(--text-secondary)] disabled:opacity-50"
+          >
+            Login with OTP instead
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/login" })}
+            className="text-[color:var(--text-secondary)]"
+          >
+            Change number
+          </button>
+        </div>
 
-        {loading && (
-          <div className="flex items-center justify-center gap-2 text-[13px] text-[color:var(--text-secondary)]">
-            <Loader2 className="h-4 w-4 animate-spin" /> Verifying…
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={fallbackToOtp}
-          className="text-[14px] font-semibold text-primary disabled:text-[color:var(--text-secondary)]"
-          disabled={loading}
-        >
-          {lockedFor ? "Login with OTP instead" : "Forgot PIN? Login with OTP"}
-        </button>
+        <p className="mt-auto pt-10 text-center text-xs text-[color:var(--text-secondary)]">
+          By continuing, you agree to Badiyo's Terms & Privacy Policy.
+        </p>
       </div>
-    </div>
+    </main>
   );
 }
