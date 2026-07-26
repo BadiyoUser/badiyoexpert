@@ -52,7 +52,7 @@
   --secondary-foreground: #FFFFFF;
   --muted: #F1F5F9;
   --muted-foreground: #6B7280;
-  --accent: #E6F8F1;
+  --accent: #E6F0FE;
   --accent-foreground: #0874FD;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
@@ -60,6 +60,25 @@
   --divider: #F1F5F9;
   --input: #E5E7EB;
   --ring: #0874FD;
+
+  /* Derived brand tokens */
+  --primary-glow: color-mix(in oklab, var(--primary) 60%, white);
+  --primary-soft: color-mix(in oklab, var(--primary) 12%, white);
+  --primary-strong: color-mix(in oklab, var(--primary) 85%, black);
+  --shadow-brand-sm: 0 6px 20px -6px color-mix(in oklab, var(--primary) 50%, transparent);
+  --shadow-brand-md: 0 12px 32px -12px color-mix(in oklab, var(--primary) 50%, transparent);
+  --shadow-card: 0 4px 16px -8px rgba(34, 40, 49, 0.08);
+
+  /* Status tokens */
+  --success: #059669;
+  --success-foreground: #FFFFFF;
+  --success-soft: #ECFDF5;
+  --success-border: #A7F3D0;
+  --success-strong: #065F46;
+  --warning-soft: #FEF2F2;
+  --warning-border: #FCA5A5;
+  --warning-strong: #991B1B;
+  --warning-icon: #B91C1C;
 }
 
 @layer base {
