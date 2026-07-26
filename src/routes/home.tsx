@@ -144,7 +144,7 @@ function HomeDashboard() {
         return [...prev, { booking, address, distanceKm, soundHandle }];
       });
     },
-    [online, radiusKm],
+    [online, isBusy, radiusKm],
   );
 
   // Subscribe to broadcast events while online
