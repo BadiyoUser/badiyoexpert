@@ -185,6 +185,16 @@ function HomeDashboard() {
   useEffect(() => {
     if (!online || !expert?.id || isBusy) return;
     if (locationState.status !== "ok") return;
+    const myCoords = locationState.coords;
+    console.log("[broadcast][catchup] running", {
+      expertId: expert.id,
+      online,
+      isBusy,
+      lat: myCoords.lat,
+      lng: myCoords.lng,
+      lastPushedAt: tracker.lastPushedAt,
+      radiusKm,
+    });
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -195,15 +205,32 @@ function HomeDashboard() {
         .eq("status", "accepted")
         .is("assigned_expert_id", null)
         .limit(50);
-      if (cancelled || error || !data) return;
-      for (const row of data) {
+      if (cancelled) return;
+      if (error) {
+        console.warn("[broadcast][catchup] query error", error);
+        return;
+      }
+      const raw = data ?? [];
+      const withinRadius = raw.filter((r) => {
+        if (r.booking_lat == null || r.booking_lng == null) return false;
+        return (
+          haversineKm(myCoords, { lat: Number(r.booking_lat), lng: Number(r.booking_lng) }) <=
+          radiusKm
+        );
+      });
+      console.log(
+        `[broadcast][catchup] raw=${raw.length} withinRadius=${withinRadius.length}`,
+        raw.map((r) => r.id),
+      );
+      for (const row of raw) {
         void evaluateBooking(row as BroadcastBooking);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [online, expert?.id, isBusy, locationState.status, evaluateBooking]);
+  }, [online, expert?.id, isBusy, locationState, tracker.lastPushedAt, radiusKm, evaluateBooking]);
+
 
   // Cleanup all sounds when going offline / unmounting
   useEffect(() => {
