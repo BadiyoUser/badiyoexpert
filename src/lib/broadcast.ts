@@ -1,8 +1,6 @@
 // Utilities for the Home-screen broadcast experience.
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-// TEMPORARY: on-screen debug overlay for diagnosing Online-toggle hangs.
-import { dlog } from "@/lib/debug-log";
 
 export type Coords = { lat: number; lng: number };
 
@@ -50,96 +48,22 @@ async function pushLocation(coords: Coords): Promise<void> {
   }
 }
 
-async function getNativeGeolocation() {
-  try {
-    dlog("getNativeGeolocation: importing @capacitor/core");
-    const { Capacitor } = await import("@capacitor/core");
-    const isNative = Capacitor.isNativePlatform?.();
-    dlog(`getNativeGeolocation: isNative=${isNative}`);
-    if (!isNative) return null;
-    dlog("getNativeGeolocation: importing @capacitor/geolocation");
-    const { Geolocation } = await import("@capacitor/geolocation");
-    dlog("getNativeGeolocation: plugin loaded");
-    return Geolocation;
-  } catch (e) {
-    dlog(`getNativeGeolocation: FAILED ${(e as Error).message}`);
-    return null;
-  }
-}
-
-// Independent hard timer that fires from the event loop regardless of what
-// the awaited promise does. Some Android OEM WebViews silently drop the
-// Capacitor bridge channel, so a plugin call never resolves OR rejects —
-// this guarantees the JS promise settles anyway.
-function hardTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+// Hard timeout wrapper — some Android OEM WebViews silently drop the Capacitor
+// bridge or hang forever waiting for a GPS fix. This guarantees the promise
+// settles from the event loop so the UI can never get stuck.
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   let done = false;
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
+    const t = setTimeout(() => {
       if (done) return;
       done = true;
-      dlog(`hardTimeout FIRED: ${label} (${ms}ms)`);
-      const err = new Error(`${label} timed out after ${ms}ms`) as Error & { code?: number };
-      err.code = 3;
-      reject(err);
-    }, ms);
-    Promise.resolve(p).then(
-      (v) => { if (done) return; done = true; clearTimeout(timer); resolve(v); },
-      (e) => { if (done) return; done = true; clearTimeout(timer); reject(e); },
-    );
-  });
-}
-
-async function ensureNativePermission(): Promise<void> {
-  dlog("ensureNativePermission: entry");
-  const Geo = await getNativeGeolocation();
-  if (!Geo) { dlog("perm: web (no native plugin)"); return; }
-  dlog("checkPermissions: invoking native call");
-  let perm: { location?: string; coarseLocation?: string };
-  try {
-    perm = await hardTimeout(Geo.checkPermissions(), 5_000, "checkPermissions");
-    dlog(`checkPermissions: ${perm.location}/${perm.coarseLocation}`);
-  } catch (e) {
-    dlog(`checkPermissions: ERROR ${(e as Error).message} — assuming prompt`);
-    perm = { location: "prompt", coarseLocation: "prompt" };
-  }
-  console.log("[expert][geo] checkPermissions →", perm);
-  if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
-    dlog("requestPermissions: invoking native call");
-    try {
-      perm = await hardTimeout(
-        Geo.requestPermissions({ permissions: ["location", "coarseLocation"] }),
-        30_000,
-        "requestPermissions",
-      );
-      dlog(`requestPermissions: ${perm.location}/${perm.coarseLocation}`);
-    } catch (e) {
-      dlog(`requestPermissions: ERROR ${(e as Error).message} — proceeding`);
-      return;
-    }
-    console.log("[expert][geo] requestPermissions →", perm);
-  }
-  if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
-    dlog("perm: DENIED");
-    const err = new Error("Location permission denied") as Error & { code?: number };
-    err.code = 1;
-    throw err;
-  }
-}
-
-// Hard timeout wrapper — the OS/Capacitor `timeout` option is not always
-// honored on Android (some devices hang forever waiting for a GPS fix).
-// This guarantees the promise settles so the UI can never get stuck.
-function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => {
-      dlog(`withTimeout FIRED: ${label} (${ms}ms)`);
       const err = new Error(`${label} timed out after ${ms}ms`) as Error & { code?: number };
       err.code = 3; // TIMEOUT
       reject(err);
     }, ms);
-    p.then(
-      (v) => { clearTimeout(t); resolve(v); },
-      (e) => { clearTimeout(t); reject(e); },
+    Promise.resolve(p).then(
+      (v) => { if (done) return; done = true; clearTimeout(t); resolve(v); },
+      (e) => { if (done) return; done = true; clearTimeout(t); reject(e); },
     );
   });
 }
@@ -152,41 +76,32 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 let osPermissionRequested = false;
 
 async function triggerNativeOsPermissionDialog(): Promise<void> {
-  if (osPermissionRequested) {
-    dlog("OS permission: already requested this session, skipping");
-    return;
-  }
+  if (osPermissionRequested) return;
   osPermissionRequested = true;
   try {
     const { Capacitor } = await import("@capacitor/core");
-    if (!Capacitor.isNativePlatform?.()) {
-      dlog("OS permission: web platform, skipping native request");
-      return;
-    }
+    if (!Capacitor.isNativePlatform?.()) return;
     const { Geolocation } = await import("@capacitor/geolocation");
-    dlog("OS permission request triggered");
     try {
-      const result = await hardTimeout(
+      await withTimeout(
         Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] }),
         5_000,
         "requestPermissions(os-dialog)",
       );
-      dlog(`OS permission result: ${result.location}/${result.coarseLocation}`);
-    } catch (e) {
-      dlog(`OS permission result: ${(e as Error).message}`);
+    } catch {
+      // Timed out or denied — proceed anyway; navigator.geolocation will
+      // surface the real error if permission is still missing.
     }
-  } catch (e) {
-    dlog(`OS permission: plugin load failed: ${(e as Error).message}`);
+  } catch {
+    // Plugin unavailable — this is fine on web.
   }
 }
 
 async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
-  dlog("getCurrentPositionOnce: entry");
   // Trigger the native Android OS permission dialog once per session before
   // asking the WebView for a location fix. On web/iOS this is a no-op.
   await triggerNativeOsPermissionDialog();
 
-  dlog("getCurrentPosition: started (navigator.geolocation)");
   return withTimeout(
     new Promise<GeolocationPosition>((resolve, reject) => {
       if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -194,14 +109,8 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
         return;
       }
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
-          resolve(pos);
-        },
-        (err) => {
-          dlog(`getCurrentPosition: FAILED code=${err.code} ${err.message}`);
-          reject(err);
-        },
+        resolve,
+        reject,
         { enableHighAccuracy: true, maximumAge: 15_000, timeout: 15_000 },
       );
     }),
@@ -209,6 +118,7 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
     "getCurrentPosition",
   );
 }
+
 
 
 // Tracks device geolocation while `enabled` is true and pushes it to Supabase
