@@ -67,7 +67,7 @@ function WalletScreen() {
                   {t.type === "credit" ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-[14px] font-semibold text-foreground">{t.reason ?? (t.type === "credit" ? "Credit" : "Debit")}</p>
+                  <p className="text-[14px] font-semibold text-foreground">{formatReason(t.reason, t.type)}</p>
                   <p className="text-[12px] text-[color:var(--text-secondary)]">{new Date(t.created_at).toLocaleString("en-IN")}</p>
                 </div>
                 <span className={`text-[15px] font-bold ${t.type === "credit" ? "text-primary" : "text-red-600"}`}>
