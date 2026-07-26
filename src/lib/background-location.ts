@@ -21,6 +21,8 @@ interface BackgroundLocationPlugin {
   check(): Promise<Omit<BgLocationStatus, "unavailable">>;
   request(): Promise<BgLocationRequestResult>;
   openSettings(): Promise<void>;
+  startBackgroundService(): Promise<{ started: boolean; reason?: string }>;
+  stopBackgroundService(): Promise<{ stopped: boolean }>;
 }
 
 const Plugin = registerPlugin<BackgroundLocationPlugin>("BackgroundLocation");
@@ -53,4 +55,26 @@ export async function requestBackgroundLocation(): Promise<BgLocationRequestResu
 export async function openAppLocationSettings(): Promise<void> {
   if (!isAndroid()) return;
   await Plugin.openSettings();
+}
+
+/** Starts the sticky foreground service. Safe no-op on web/iOS or when
+ * background permission isn't granted (native side re-checks and refuses). */
+export async function startBackgroundAvailabilityService(): Promise<boolean> {
+  if (!isAndroid()) return false;
+  try {
+    const res = await Plugin.startBackgroundService();
+    return !!res?.started;
+  } catch (err) {
+    console.warn("[bg-location] startBackgroundService failed", err);
+    return false;
+  }
+}
+
+export async function stopBackgroundAvailabilityService(): Promise<void> {
+  if (!isAndroid()) return;
+  try {
+    await Plugin.stopBackgroundService();
+  } catch (err) {
+    console.warn("[bg-location] stopBackgroundService failed", err);
+  }
 }
