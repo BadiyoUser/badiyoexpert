@@ -376,9 +376,13 @@ function HomeDashboard() {
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
             <Inbox className="h-9 w-9 text-primary" strokeWidth={2} />
           </div>
-          <h2 className="mt-5 text-[20px] font-bold text-foreground">Waiting for a booking</h2>
+          <h2 className="mt-5 text-[20px] font-bold text-foreground">
+            {isBusy ? "Active booking in progress" : "Waiting for a booking"}
+          </h2>
           <p className="mt-2 max-w-xs text-[14px] text-[color:var(--text-secondary)]">
-            {online ? "New requests from nearby customers will appear here." : "Turn on your availability to start getting requests."}
+            {isBusy
+              ? "New requests are paused until your current booking is complete."
+              : online ? "New requests from nearby customers will appear here." : "Turn on your availability to start getting requests."}
           </p>
         </section>
       )}
