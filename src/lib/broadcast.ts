@@ -48,7 +48,45 @@ async function pushLocation(coords: Coords): Promise<void> {
   }
 }
 
-function getCurrentPositionOnce(): Promise<GeolocationPosition> {
+async function getNativeGeolocation() {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform?.()) return null;
+    const { Geolocation } = await import("@capacitor/geolocation");
+    return Geolocation;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureNativePermission(): Promise<void> {
+  const Geo = await getNativeGeolocation();
+  if (!Geo) return;
+  // Capacitor's own permission API — the OS-level grant is not enough; the
+  // plugin also gates the call and will otherwise throw "application does
+  // not have sufficient geolocation permissions".
+  let perm = await Geo.checkPermissions();
+  if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    perm = await Geo.requestPermissions({ permissions: ["location", "coarseLocation"] });
+  }
+  if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    const err = new Error("Location permission denied") as Error & { code?: number };
+    err.code = 1;
+    throw err;
+  }
+}
+
+async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
+  const Geo = await getNativeGeolocation();
+  if (Geo) {
+    await ensureNativePermission();
+    const pos = await Geo.getCurrentPosition({
+      enableHighAccuracy: true,
+      maximumAge: 15_000,
+      timeout: 20_000,
+    });
+    return pos as unknown as GeolocationPosition;
+  }
   return new Promise((resolve, reject) => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       reject(new Error("Geolocation not supported on this device."));
