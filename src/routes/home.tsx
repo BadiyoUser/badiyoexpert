@@ -326,22 +326,29 @@ function HomeDashboard() {
   const acceptBroadcast = useMutation({
     mutationFn: async (bookingId: string) => {
       if (!expert?.id) throw new Error("Expert profile unavailable");
-      const { error } = await supabase.rpc("claim_booking_as_expert", {
+      console.log("[broadcast][accept] calling claim_booking_as_expert", { bookingId, expertId: expert.id });
+      const { data, error } = await supabase.rpc("claim_booking_as_expert", {
         p_booking_id: bookingId,
       });
+      console.log("[broadcast][accept] claim result", { bookingId, data, error });
       if (error) throw error;
+      if (!data) throw new Error("Claim returned no booking — it may have been taken.");
       return bookingId;
     },
     onSuccess: (bookingId) => {
+      // Only remove card + navigate on CONFIRMED success.
       removeCandidate(bookingId);
       qc.invalidateQueries({ queryKey: ["assigned-booking", expert?.id] });
+      qc.invalidateQueries({ queryKey: ["expert", userId] });
       navigate({ to: "/booking/$id", params: { id: bookingId } });
     },
-    onError: (err: Error, bookingId) => {
-      removeCandidate(bookingId);
+    onError: (err: Error) => {
+      // Leave the card visible so the expert can retry / see what's going on.
+      console.warn("[broadcast][accept] failed", err);
       toast.error(err.message || "Could not accept this booking.");
     },
   });
+
 
   if (loading || !userId) {
     return <div className="flex min-h-[100dvh] items-center justify-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
