@@ -86,8 +86,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Badiyo Expert" },
       { name: "twitter:description", content: "Badiyo Expert — accept bookings and serve customers on the go." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/59ae8687-eb8a-486a-a566-9d4fcdce73bc/id-preview-306aa5d1--fbf7d2d0-c2ed-40ae-9442-272eb6566693.lovable.app-1784984809356.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/59ae8687-eb8a-486a-a566-9d4fcdce73bc/id-preview-306aa5d1--fbf7d2d0-c2ed-40ae-9442-272eb6566693.lovable.app-1784984809356.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/31ec989f-adff-4472-97b8-0279ddbf74fb" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/31ec989f-adff-4472-97b8-0279ddbf74fb" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
