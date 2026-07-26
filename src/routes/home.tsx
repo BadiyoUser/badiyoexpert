@@ -242,8 +242,7 @@ function HomeDashboard() {
     mutationFn: async (bookingId: string) => {
       if (!expert?.id) throw new Error("Expert profile unavailable");
       const { error } = await supabase.rpc("claim_booking_as_expert", {
-        _booking_id: bookingId,
-        _expert_id: expert.id,
+        p_booking_id: bookingId,
       });
       if (error) throw error;
       return bookingId;
