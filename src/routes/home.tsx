@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Inbox, MapPin, Loader2, Wallet, History, Award, LifeBuoy, Clock, X, AlertTriangle } from "lucide-react";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
-import { useExpert, useExpertSession, initials, formatINR } from "@/lib/expert-client";
+import { useExpert, useExpertSession, initials } from "@/lib/expert-client";
 import {
   haversineKm,
   startNotificationLoop,
@@ -453,7 +453,6 @@ function HomeDashboard() {
               <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
                 {assigned.status === "in_progress" ? "In progress" : "New booking"}
               </span>
-              <span className="text-[16px] font-bold text-foreground">{formatINR(assigned.price)}</span>
             </div>
             <p className="mt-3 text-[18px] font-bold text-foreground">{assigned.service_duration_minutes}-min service</p>
             <div className="mt-2 flex items-center gap-1 text-[13px] font-semibold text-[color:var(--text-secondary)]">
