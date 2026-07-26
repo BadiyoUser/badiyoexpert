@@ -385,28 +385,31 @@ function HomeDashboard() {
       return bookingId;
     },
     onSuccess: (bookingId) => {
-      // Only remove card + navigate on CONFIRMED success.
+      toast.success("Booking accepted");
       removeCandidate(bookingId);
       qc.invalidateQueries({ queryKey: ["assigned-booking", expert?.id] });
       qc.invalidateQueries({ queryKey: ["expert", userId] });
       navigate({ to: "/booking/$id", params: { id: bookingId } });
     },
     onError: (err: Error, bookingId) => {
-      const msg = err.message || "";
-      console.warn("[broadcast][accept] failed", { bookingId, msg });
-      // "Already accepted by another expert" is a terminal state for this
-      // card — auto-dismiss it so the expert isn't stuck tapping a dead
-      // card. Same for "not found" (booking deleted/completed elsewhere).
-      if (/already been accepted|already accepted|not found/i.test(msg)) {
+      const msg = err?.message || String(err) || "";
+      console.warn("[broadcast][accept] failed", { bookingId, msg, err });
+      if (/already been accepted|already accepted|not found|no booking/i.test(msg)) {
         toast.info("This booking was already accepted by another expert.");
         removeCandidate(bookingId);
         return;
       }
-      // Every other error (radius, busy, network) — keep the card so the
-      // expert can retry, and surface the reason.
-      toast.error(msg || "Could not accept this booking.");
+      toast.error(msg || "Could not accept this booking — please try again.");
     },
-
+    onSettled: (data, error, bookingId) => {
+      // Safety net: if neither onSuccess nor onError produced a visible toast
+      // (e.g. thrown non-Error, canceled mutation, callback threw), always
+      // surface *something* so Accept can never fail completely silently.
+      if (!data && !error) {
+        console.warn("[broadcast][accept] settled with neither data nor error", { bookingId });
+        toast.error("Something went wrong — please try again.");
+      }
+    },
   });
 
 
