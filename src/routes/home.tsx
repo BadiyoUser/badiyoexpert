@@ -181,6 +181,32 @@ function HomeDashboard() {
     };
   }, [online, expert?.id, evaluateBooking, removeCandidate]);
 
+  // Catch-up fetch: realtime only delivers events fired AFTER subscribe. If the
+  // expert opens the app (cold start / notification tap) while a booking is
+  // already broadcasting, back-fill it here so the card still shows.
+  useEffect(() => {
+    if (!online || !expert?.id || isBusy) return;
+    if (locationState.status !== "ok") return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          "id, status, service_duration_minutes, scheduled_time_slot, slot_type, address_id, booking_lat, booking_lng, assigned_expert_id",
+        )
+        .eq("status", "accepted")
+        .is("assigned_expert_id", null)
+        .limit(50);
+      if (cancelled || error || !data) return;
+      for (const row of data) {
+        void evaluateBooking(row as BroadcastBooking);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [online, expert?.id, isBusy, locationState.status, evaluateBooking]);
+
   // Cleanup all sounds when going offline / unmounting
   useEffect(() => {
     if (!online || isBusy) {

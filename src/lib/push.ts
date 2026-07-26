@@ -44,7 +44,13 @@ function routeFromData(
   data: unknown,
   navigate: NavigateFn,
 ): (() => void) | undefined {
-  const d = (data ?? {}) as { route?: string; booking_id?: string };
+  const d = (data ?? {}) as { route?: string; booking_id?: string; type?: string };
+  // Broadcast notifications are for unassigned bookings — always land on Home,
+  // where the broadcast card stack will surface eligible bookings. Never route
+  // to a booking-detail view (the expert isn't assigned yet, so it 403s).
+  if (d.type === "new_booking_broadcast") {
+    return () => navigate({ to: "/home" });
+  }
   if (d.booking_id) {
     return () => navigate({ to: "/booking/$id", params: { id: d.booking_id! } });
   }
