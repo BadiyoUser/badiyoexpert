@@ -101,9 +101,10 @@ function SetPinScreen() {
           </h1>
           <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
             {step === "enter"
-              ? "You'll use this (or biometrics) to sign in next time."
+              ? "You'll use this PIN to sign in next time."
               : "Re-enter the same 4 digits."}
           </p>
+
         </div>
 
         <div className="mt-10 flex justify-center gap-3">
