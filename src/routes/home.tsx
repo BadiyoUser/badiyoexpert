@@ -503,10 +503,11 @@ function HomeDashboard() {
         ))}
       </nav>
 
-      {/* Broadcast overlay stack */}
+      {/* Broadcast overlay stack — scrolls within available space above the bottom nav */}
       {candidates.length > 0 && (
         <div className="fixed inset-0 z-40 flex flex-col justify-end bg-[rgba(34,40,49,0.55)] backdrop-blur-sm">
-          <div className="mx-auto flex w-full max-w-md flex-col gap-3 p-4">
+          <div className="mx-auto flex w-full max-w-md flex-col gap-3 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+7.5rem)]" style={{ maxHeight: "100dvh" }}>
+
             {candidates.map((c) => (
               <div
                 key={c.booking.id}
