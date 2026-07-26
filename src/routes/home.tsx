@@ -71,7 +71,8 @@ function HomeDashboard() {
     return () => window.clearInterval(t);
   }, [online]);
   const locationFresh =
-    tracker.lastPushedAt != null && nowTick - tracker.lastPushedAt < 120_000;
+    tracker.lastPushedAt != null &&
+    (tracker.isHidden || nowTick - tracker.lastPushedAt < 120_000);
 
   // Broadcast radius (fetched once)
   const { data: dispatchCfg } = useQuery({
