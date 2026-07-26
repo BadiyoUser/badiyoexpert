@@ -2,10 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { savePinForBiometric } from "@/lib/secure-pin-storage";
-import { isBiometricAvailable } from "@/lib/biometric";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
+
 
 const searchSchema = z.object({ phone: z.string().optional() });
 
@@ -76,16 +75,9 @@ function SetPinScreen() {
     try {
       const { error: rpcErr } = await supabase.rpc("set_login_pin", { p_pin: first });
       if (rpcErr) throw rpcErr;
-      if (phone) {
-        try {
-          const bio = await isBiometricAvailable();
-          if (bio.available) await savePinForBiometric(phone, first);
-        } catch {
-          /* non-fatal */
-        }
-      }
-      toast.success("PIN set. Use biometrics to sign in next time.");
+      toast.success("PIN set. Use it to sign in next time.");
       navigate({ to: "/home" });
+
     } catch (err) {
       setError((err as Error).message ?? "Could not save PIN");
       setPin1(["", "", "", ""]);
@@ -109,9 +101,10 @@ function SetPinScreen() {
           </h1>
           <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
             {step === "enter"
-              ? "You'll use this (or biometrics) to sign in next time."
+              ? "You'll use this PIN to sign in next time."
               : "Re-enter the same 4 digits."}
           </p>
+
         </div>
 
         <div className="mt-10 flex justify-center gap-3">
