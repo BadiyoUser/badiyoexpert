@@ -494,7 +494,7 @@ function HomeDashboard() {
         </section>
       )}
 
-      <nav className="mt-6 grid grid-cols-4 gap-2 px-6">
+      <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto grid w-full max-w-md grid-cols-4 gap-2 border-t border-border bg-background px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
         {[
           { to: "/history" as const, label: "History", Icon: History },
           { to: "/wallet" as const, label: "Wallet", Icon: Wallet },
