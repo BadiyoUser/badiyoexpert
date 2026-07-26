@@ -52,8 +52,20 @@ Deno.serve(async (req) => {
 
     // Fire-and-report WhatsApp alert to support.
     if (SUPPORT_PHONE) {
+      const timeStr = new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour12: true,
+      });
+      const mapsLink = body.latitude && body.longitude
+        ? `https://maps.google.com/?q=${body.latitude},${body.longitude}`
+        : "Location unavailable";
+      console.log("[SOS] dispatching WhatsApp", {
+        campaign: SOS_CAMPAIGN,
+        support: SUPPORT_PHONE,
+        params: [expert.name, expert.phone, body.booking_id ?? "N/A", timeStr, mapsLink],
+      });
       try {
-        await sendAiSensyTemplate({
+        const waResp = await sendAiSensyTemplate({
           campaignName: SOS_CAMPAIGN,
           destination: SUPPORT_PHONE,
           userName: "Badiyo Support",
@@ -61,14 +73,16 @@ Deno.serve(async (req) => {
             expert.name,
             expert.phone,
             body.booking_id ?? "N/A",
-            body.latitude && body.longitude
-              ? `${body.latitude},${body.longitude}`
-              : "unknown",
+            timeStr,
+            mapsLink,
           ],
         });
+        console.log("[SOS] AiSensy raw response body:", waResp);
       } catch (waErr) {
         console.error("SOS WhatsApp send failed", waErr);
       }
+    } else {
+      console.warn("[SOS] BADIYO_SUPPORT_PHONE not configured — skipping WhatsApp send");
     }
 
     return json({ ok: true, alert_id: alert.id });
