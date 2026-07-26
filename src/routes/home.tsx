@@ -10,6 +10,11 @@ import {
   useExpertLocationTracking,
   type Coords,
 } from "@/lib/broadcast";
+import {
+  checkBackgroundLocation,
+  startBackgroundAvailabilityService,
+  stopBackgroundAvailabilityService,
+} from "@/lib/background-location";
 import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
