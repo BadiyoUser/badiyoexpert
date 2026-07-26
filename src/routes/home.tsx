@@ -181,11 +181,11 @@ function HomeDashboard() {
 
   // Cleanup all sounds when going offline / unmounting
   useEffect(() => {
-    if (!online) {
+    if (!online || isBusy) {
       candidatesRef.current.forEach((c) => c.soundHandle.stop());
       setCandidates([]);
     }
-  }, [online]);
+  }, [online, isBusy]);
   useEffect(() => () => stopAllNotificationLoops(), []);
 
   // Existing assigned-booking subscription (unchanged)
