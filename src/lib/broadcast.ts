@@ -26,6 +26,8 @@ export type LocationState =
 export type LocationTracker = {
   state: LocationState;
   lastPushedAt: number | null;
+  /** True when the page is currently hidden/backgrounded. Tracking is paused. */
+  isHidden: boolean;
   /**
    * Imperatively request a fresh fix and persist it. Resolves with coords on
    * success, or throws with a user-readable message on failure. Callers should
