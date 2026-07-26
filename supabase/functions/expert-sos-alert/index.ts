@@ -4,7 +4,7 @@ import { sendAiSensyTemplate } from "../_shared/aisensy.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SOS_CAMPAIGN = Deno.env.get("AISENSY_SOS_CAMPAIGN") ?? "badiyososalert";
+const SOS_CAMPAIGN = Deno.env.get("AISENSY_SOS_CAMPAIGN") ?? "badiyososalerts";
 const SUPPORT_PHONE = Deno.env.get("BADIYO_SUPPORT_PHONE") ?? "";
 
 Deno.serve(async (req) => {
