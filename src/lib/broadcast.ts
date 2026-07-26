@@ -52,34 +52,70 @@ async function pushLocation(coords: Coords): Promise<void> {
 
 async function getNativeGeolocation() {
   try {
+    dlog("getNativeGeolocation: importing @capacitor/core");
     const { Capacitor } = await import("@capacitor/core");
-    if (!Capacitor.isNativePlatform?.()) return null;
+    const isNative = Capacitor.isNativePlatform?.();
+    dlog(`getNativeGeolocation: isNative=${isNative}`);
+    if (!isNative) return null;
+    dlog("getNativeGeolocation: importing @capacitor/geolocation");
     const { Geolocation } = await import("@capacitor/geolocation");
+    dlog("getNativeGeolocation: plugin loaded");
     return Geolocation;
-  } catch {
+  } catch (e) {
+    dlog(`getNativeGeolocation: FAILED ${(e as Error).message}`);
     return null;
   }
 }
 
+// Independent hard timer that fires from the event loop regardless of what
+// the awaited promise does. Some Android OEM WebViews silently drop the
+// Capacitor bridge channel, so a plugin call never resolves OR rejects —
+// this guarantees the JS promise settles anyway.
+function hardTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  let done = false;
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      dlog(`hardTimeout FIRED: ${label} (${ms}ms)`);
+      const err = new Error(`${label} timed out after ${ms}ms`) as Error & { code?: number };
+      err.code = 3;
+      reject(err);
+    }, ms);
+    Promise.resolve(p).then(
+      (v) => { if (done) return; done = true; clearTimeout(timer); resolve(v); },
+      (e) => { if (done) return; done = true; clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 async function ensureNativePermission(): Promise<void> {
+  dlog("ensureNativePermission: entry");
   const Geo = await getNativeGeolocation();
   if (!Geo) { dlog("perm: web (no native plugin)"); return; }
-  // Capacitor's own permission API — the OS-level grant is not enough; the
-  // plugin also gates the call and will otherwise throw "application does
-  // not have sufficient geolocation permissions".
-  dlog("checkPermissions: start");
-  let perm = await withTimeout(Geo.checkPermissions(), 8_000, "checkPermissions");
-  dlog(`checkPermissions: ${perm.location}/${perm.coarseLocation}`);
+  dlog("checkPermissions: invoking native call");
+  let perm: { location?: string; coarseLocation?: string };
+  try {
+    perm = await hardTimeout(Geo.checkPermissions(), 5_000, "checkPermissions");
+    dlog(`checkPermissions: ${perm.location}/${perm.coarseLocation}`);
+  } catch (e) {
+    dlog(`checkPermissions: ERROR ${(e as Error).message} — assuming prompt`);
+    perm = { location: "prompt", coarseLocation: "prompt" };
+  }
   console.log("[expert][geo] checkPermissions →", perm);
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
-    dlog("requestPermissions: start");
-    console.log("[expert][geo] requesting permissions…");
-    perm = await withTimeout(
-      Geo.requestPermissions({ permissions: ["location", "coarseLocation"] }),
-      30_000,
-      "requestPermissions",
-    );
-    dlog(`requestPermissions: ${perm.location}/${perm.coarseLocation}`);
+    dlog("requestPermissions: invoking native call");
+    try {
+      perm = await hardTimeout(
+        Geo.requestPermissions({ permissions: ["location", "coarseLocation"] }),
+        30_000,
+        "requestPermissions",
+      );
+      dlog(`requestPermissions: ${perm.location}/${perm.coarseLocation}`);
+    } catch (e) {
+      dlog(`requestPermissions: ERROR ${(e as Error).message} — proceeding`);
+      return;
+    }
     console.log("[expert][geo] requestPermissions →", perm);
   }
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
