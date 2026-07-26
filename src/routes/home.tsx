@@ -230,17 +230,36 @@ function HomeDashboard() {
     mutationFn: async (next: boolean) => {
       try {
         if (next) {
-          // Capture + persist a location fix BEFORE flipping online, so a
-          // broadcast that fires during this gap still sees us as eligible.
-          // ensureFix() has its own hard timeout so this cannot hang.
-          console.log("[expert][toggle] ensureFix start");
-          await tracker.ensureFix();
-          console.log("[expert][toggle] ensureFix done");
+          dclear();
+          dlog("Toggle tapped: going ONLINE");
+          // Outer safety net: whatever hangs — permission dialog, GPS fix,
+          // or the RPC — this guarantees the mutation settles in ≤20s so the
+          // UI can never stay in "Updating…" forever.
+          await Promise.race([
+            (async () => {
+              console.log("[expert][toggle] ensureFix start");
+              await tracker.ensureFix();
+              console.log("[expert][toggle] ensureFix done");
+              const { error } = await supabase.rpc("expert_set_online", { _online: true });
+              if (error) throw error;
+            })(),
+            new Promise((_, reject) =>
+              setTimeout(() => {
+                dlog("toggle: OUTER TIMEOUT fired (20s)");
+                reject(new Error("Toggle timed out after 20s"));
+              }, 20_000),
+            ),
+          ]);
+          dlog("Toggle: SUCCESS online");
+          return next;
         }
-        const { error } = await supabase.rpc("expert_set_online", { _online: next });
+        dlog("Toggle tapped: going OFFLINE");
+        const { error } = await supabase.rpc("expert_set_online", { _online: false });
         if (error) throw error;
+        dlog("Toggle: SUCCESS offline");
         return next;
       } catch (err) {
+        dlog(`Toggle: FAILED ${(err as Error).message}`);
         console.warn("[expert][toggle] failed", err);
         throw err;
       }
