@@ -362,21 +362,26 @@ export function startNotificationLoop(): { stop: () => void } {
 
   const beep = () => {
     if (stopped) return;
+    // Resume in case the browser suspended the context while idle —
+    // keeps the loop audible until stop() is explicitly called.
+    if (ctx.state === "suspended") void ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, ctx.currentTime);
     osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.18);
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+    gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.55);
     osc.connect(gain).connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.5);
+    osc.stop(ctx.currentTime + 0.6);
   };
 
+  // Fire immediately, then repeat continuously until stop() is called
+  // (Accept / Reject / Dismiss / claimed by another expert).
   beep();
-  timer = window.setInterval(beep, 1400);
+  timer = window.setInterval(beep, 750);
 
   const handle = {
     stop: () => {
