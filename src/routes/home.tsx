@@ -64,16 +64,21 @@ function HomeDashboard() {
     coordsRef.current = locationState.status === "ok" ? locationState.coords : null;
   }, [locationState]);
 
-  // "Fresh" = we successfully persisted a fix within the last 2 minutes.
+  // "Fresh" = we successfully persisted a fix within the last 15 minutes.
+  // This gives tolerance for the app being briefly minimized (home button,
+  // WhatsApp/call switch) — location only actually updates while foregrounded,
+  // but we keep trusting the last real fix for up to 15 min.
   const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
     if (!online) return;
     const t = window.setInterval(() => setNowTick(Date.now()), 15_000);
     return () => window.clearInterval(t);
   }, [online]);
+  const LOCATION_FRESH_MS = 15 * 60_000;
   const locationFresh =
     tracker.lastPushedAt != null &&
-    (tracker.isHidden || nowTick - tracker.lastPushedAt < 120_000);
+    (tracker.isHidden || nowTick - tracker.lastPushedAt < LOCATION_FRESH_MS);
+
 
   // Broadcast radius (fetched once)
   const { data: dispatchCfg } = useQuery({
