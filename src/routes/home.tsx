@@ -226,20 +226,36 @@ function HomeDashboard() {
 
   const toggle = useMutation({
     mutationFn: async (next: boolean) => {
-      if (next) {
-        // Capture + persist a location fix BEFORE flipping online, so a
-        // broadcast that fires during this gap still sees us as eligible.
-        await tracker.ensureFix();
+      try {
+        if (next) {
+          // Capture + persist a location fix BEFORE flipping online, so a
+          // broadcast that fires during this gap still sees us as eligible.
+          // ensureFix() has its own hard timeout so this cannot hang.
+          console.log("[expert][toggle] ensureFix start");
+          await tracker.ensureFix();
+          console.log("[expert][toggle] ensureFix done");
+        }
+        const { error } = await supabase.rpc("expert_set_online", { _online: next });
+        if (error) throw error;
+        return next;
+      } catch (err) {
+        console.warn("[expert][toggle] failed", err);
+        throw err;
       }
-      const { error } = await supabase.rpc("expert_set_online", { _online: next });
-      if (error) throw error;
-      return next;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expert", userId] }),
     onError: (err: Error) => {
-      toast.error(err.message || "Could not update your status.");
+      const msg = err.message || "";
+      if (/permission/i.test(msg) || /denied/i.test(msg)) {
+        toast.error("Couldn't get your location — check permissions and try again.");
+      } else if (/timed out/i.test(msg) || /timeout/i.test(msg)) {
+        toast.error("Couldn't get your location — move to an open area and try again.");
+      } else {
+        toast.error(msg || "Could not update your status.");
+      }
     },
   });
+
 
   const acceptBroadcast = useMutation({
     mutationFn: async (bookingId: string) => {
