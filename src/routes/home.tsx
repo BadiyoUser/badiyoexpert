@@ -228,16 +228,21 @@ function HomeDashboard() {
         .from("bookings")
         .select("id, status, assigned_expert_id")
         .in("id", ids);
-      if (error) return;
+      if (error) {
+        console.log("[broadcast][reverify] error", error);
+        return;
+      }
       const stillValid = new Set(
         (data ?? [])
           .filter((r) => r.status === "accepted" && r.assigned_expert_id == null)
           .map((r) => r.id as string),
       );
-      for (const id of ids) {
-        if (!stillValid.has(id)) removeCandidate(id);
-      }
-    }, 8_000);
+      const toRemove = ids.filter((id) => !stillValid.has(id));
+      console.log(
+        `[broadcast][reverify] checked=${ids.length} returned=${data?.length ?? 0} valid=${stillValid.size} removed=${toRemove.length}`,
+      );
+      for (const id of toRemove) removeCandidate(id);
+    }, 4_000);
     return () => window.clearInterval(interval);
   }, [online, isBusy, removeCandidate]);
 
