@@ -18,6 +18,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.PermissionCallback;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.annotation.Permission;
+import androidx.core.content.ContextCompat;
 
 /**
  * Custom Capacitor plugin to handle Android's 2-step background location
