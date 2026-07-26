@@ -75,16 +75,9 @@ function SetPinScreen() {
     try {
       const { error: rpcErr } = await supabase.rpc("set_login_pin", { p_pin: first });
       if (rpcErr) throw rpcErr;
-      if (phone) {
-        try {
-          const bio = await isBiometricAvailable();
-          if (bio.available) await savePinForBiometric(phone, first);
-        } catch {
-          /* non-fatal */
-        }
-      }
-      toast.success("PIN set. Use biometrics to sign in next time.");
+      toast.success("PIN set. Use it to sign in next time.");
       navigate({ to: "/home" });
+
     } catch (err) {
       setError((err as Error).message ?? "Could not save PIN");
       setPin1(["", "", "", ""]);
