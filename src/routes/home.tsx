@@ -111,21 +111,25 @@ function HomeDashboard() {
 
   const evaluateBooking = useCallback(
     async (booking: BroadcastBooking) => {
-      if (!online) return;
-      if (isBusy) return;
-      if (dismissedRef.current.has(booking.id)) return;
-      if (candidatesRef.current.some((c) => c.booking.id === booking.id)) return;
-      if (booking.assigned_expert_id) return;
-      if (booking.status !== "accepted") return;
+      const reject = (reason: string) => {
+        console.log("[broadcast][evaluate] skip", booking.id, reason);
+      };
+      if (!online) return reject("offline");
+      if (isBusy) return reject("isBusy");
+      if (dismissedRef.current.has(booking.id)) return reject("dismissed");
+      if (candidatesRef.current.some((c) => c.booking.id === booking.id)) return reject("dup");
+      if (booking.assigned_expert_id) return reject("already assigned");
+      if (booking.status !== "accepted") return reject(`status=${booking.status}`);
       const myCoords = coordsRef.current;
-      if (!myCoords) return;
-      if (booking.booking_lat == null || booking.booking_lng == null) return;
+      if (!myCoords) return reject("no expert coords");
+      if (booking.booking_lat == null || booking.booking_lng == null) return reject("no booking coords");
       const distanceKm = haversineKm(myCoords, {
         lat: Number(booking.booking_lat),
         lng: Number(booking.booking_lng),
       });
-      if (distanceKm > radiusKm) return;
+      if (distanceKm > radiusKm) return reject(`out of radius (${distanceKm.toFixed(2)}km > ${radiusKm}km)`);
 
+      console.log("[broadcast][evaluate] accepted candidate", booking.id, `${distanceKm.toFixed(2)}km`);
       let address: BroadcastCandidate["address"] = null;
       if (booking.address_id) {
         const { data } = await supabase
@@ -146,6 +150,7 @@ function HomeDashboard() {
     },
     [online, isBusy, radiusKm],
   );
+
 
   // Subscribe to broadcast events while online
   useEffect(() => {
