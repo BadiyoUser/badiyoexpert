@@ -322,18 +322,31 @@ function HomeDashboard() {
 
       <section className="px-6">
         <div
-          className="rounded-[18px] border p-6 transition"
-          style={{
-            backgroundColor: online ? "#0874FD" : "#FFFFFF",
-            borderColor: online ? "#0874FD" : "#E5E7EB",
-            boxShadow: online ? "0 12px 32px -12px rgba(0,185,122,0.5)" : "0 4px 16px -8px rgba(34,40,49,0.08)",
-          }}
+          className={`rounded-[18px] border p-6 transition ${
+            online
+              ? "border-primary bg-primary shadow-[var(--shadow-brand-md)]"
+              : "border-border bg-card shadow-[var(--shadow-card)]"
+          }`}
         >
-          <p className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: online ? "rgba(255,255,255,0.85)" : "#6B7280" }}>Status</p>
-          <p className="mt-1 text-[26px] font-bold leading-tight" style={{ color: online ? "#FFFFFF" : "#222831" }}>
+          <p
+            className={`text-[13px] font-semibold uppercase tracking-wider ${
+              online ? "text-primary-foreground/85" : "text-muted-foreground"
+            }`}
+          >
+            Status
+          </p>
+          <p
+            className={`mt-1 text-[26px] font-bold leading-tight ${
+              online ? "text-primary-foreground" : "text-foreground"
+            }`}
+          >
             {online ? "You're online" : "You're offline"}
           </p>
-          <p className="mt-1 text-[14px]" style={{ color: online ? "rgba(255,255,255,0.85)" : "#6B7280" }}>
+          <p
+            className={`mt-1 text-[14px] ${
+              online ? "text-primary-foreground/85" : "text-muted-foreground"
+            }`}
+          >
             {online ? "Ready to receive bookings" : "Go online to start receiving bookings"}
           </p>
 
@@ -343,16 +356,27 @@ function HomeDashboard() {
             aria-checked={online}
             disabled={toggle.isPending}
             onClick={() => toggle.mutate(!online)}
-            className="mt-6 flex h-[52px] w-full items-center justify-between rounded-[14px] px-2 transition disabled:opacity-60"
-            style={{ backgroundColor: online ? "rgba(255,255,255,0.18)" : "#F1F5F9" }}
+            className={`mt-6 flex h-[52px] w-full items-center justify-between rounded-[14px] px-2 transition disabled:opacity-60 ${
+              online ? "bg-primary-foreground/20" : "bg-muted"
+            }`}
           >
-            <span className="pl-3 text-[15px] font-bold" style={{ color: online ? "#FFFFFF" : "#222831" }}>
+            <span
+              className={`pl-3 text-[15px] font-bold ${
+                online ? "text-primary-foreground" : "text-foreground"
+              }`}
+            >
               {toggle.isPending ? "Updating…" : online ? "Tap to go offline" : "Tap to go online"}
             </span>
-            <span className="relative flex h-10 w-[72px] items-center rounded-full transition" style={{ backgroundColor: online ? "#FFFFFF" : "#E5E7EB" }}>
+            <span
+              className={`relative flex h-10 w-[72px] items-center rounded-full transition ${
+                online ? "bg-primary-foreground" : "bg-border"
+              }`}
+            >
               <span
-                className="absolute h-8 w-8 rounded-full shadow-md transition-all"
-                style={{ left: online ? "36px" : "4px", backgroundColor: online ? "#0874FD" : "#FFFFFF" }}
+                className={`absolute h-8 w-8 rounded-full shadow-md transition-all ${
+                  online ? "bg-primary" : "bg-card"
+                }`}
+                style={{ left: online ? "36px" : "4px" }}
               />
             </span>
           </button>
@@ -362,18 +386,20 @@ function HomeDashboard() {
           <div
             className={`mt-3 flex items-start gap-2 rounded-[14px] border p-3 ${
               locationFresh
-                ? "border-[#A7F3D0] bg-[#ECFDF5]"
-                : "border-[#FCA5A5] bg-[#FEF2F2]"
+                ? "border-[color:var(--success-border)] bg-[color:var(--success-soft)]"
+                : "border-[color:var(--warning-border)] bg-[color:var(--warning-soft)]"
             }`}
           >
             {locationFresh ? (
-              <MapPin className="mt-0.5 h-4 w-4 text-[#047857]" />
+              <MapPin className="mt-0.5 h-4 w-4 text-[color:var(--success)]" />
             ) : (
-              <AlertTriangle className="mt-0.5 h-4 w-4 text-[#B91C1C]" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-[color:var(--warning-icon)]" />
             )}
             <p
               className={`text-[13px] font-semibold ${
-                locationFresh ? "text-[#065F46]" : "text-[#991B1B]"
+                locationFresh
+                  ? "text-[color:var(--success-strong)]"
+                  : "text-[color:var(--warning-strong)]"
               }`}
             >
               {locationFresh
