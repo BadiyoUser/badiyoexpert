@@ -116,11 +116,11 @@ function BookingScreen() {
   });
 
   if (sessionLoading || !expert || bookingQ.isLoading) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+    return <div className="flex min-h-[100dvh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
   if (!booking || !isMine) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 text-center">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 text-center">
         <h1 className="text-[22px] font-bold text-foreground">Booking not found</h1>
         <p className="mt-2 text-[14px] text-[color:var(--text-secondary)]">This booking isn't assigned to you.</p>
         <Link to="/home" className="mt-6 h-[52px] w-full max-w-xs flex items-center justify-center rounded-[14px] bg-primary font-bold text-primary-foreground">Back to home</Link>
@@ -129,7 +129,7 @@ function BookingScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background pb-6">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pt-[env(safe-area-inset-top)] pb-[max(env(safe-area-inset-bottom),1.5rem)]">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
