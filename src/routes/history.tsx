@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpert, useExpertSession, formatINR } from "@/lib/expert-client";
 
@@ -21,6 +22,8 @@ function HistoryScreen() {
   const q = useQuery({
     queryKey: ["history", expert?.id],
     enabled: !!expert?.id,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
@@ -32,6 +35,37 @@ function HistoryScreen() {
       return data ?? [];
     },
   });
+
+  // Refetch whenever the app returns to foreground (screen unlock / app switch)
+  // so a booking created while the app was backgrounded shows up without the
+  // user having to navigate away and back.
+  useEffect(() => {
+    if (!expert?.id) return;
+    const onVis = () => {
+      if (!document.hidden) void q.refetch();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+    };
+  }, [expert?.id, q]);
+
+  // Realtime: keep the list live while the screen is open.
+  useEffect(() => {
+    if (!expert?.id) return;
+    const ch = supabase
+      .channel(`expert-${expert.id}-history`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `assigned_expert_id=eq.${expert.id}` },
+        () => void q.refetch(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [expert?.id, q]);
+
 
   if (loading) return <div className="flex min-h-[100dvh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
