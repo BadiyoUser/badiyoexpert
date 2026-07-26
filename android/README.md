@@ -46,3 +46,17 @@ After any change here, run:
 npx cap sync android
 cd android && ./gradlew assembleDebug
 ```
+
+## Required Gradle dependency (`android/app/build.gradle`)
+
+Phase 3 uses Google Play services location (`FusedLocationProviderClient`)
+inside `BackgroundAvailabilityService` to poll the expert's position every
+60s while the app is closed. Add to the `dependencies { ... }` block:
+
+```gradle
+implementation "com.google.android.gms:play-services-location:21.3.0"
+```
+
+Then re-sync Gradle. No Google Maps API key is required for the location
+API — only the `google-services.json` already present for FCM.
+
