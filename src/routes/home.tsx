@@ -453,7 +453,6 @@ function HomeDashboard() {
               <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
                 {assigned.status === "in_progress" ? "In progress" : "New booking"}
               </span>
-              <span className="text-[16px] font-bold text-foreground">{formatINR(assigned.price)}</span>
             </div>
             <p className="mt-3 text-[18px] font-bold text-foreground">{assigned.service_duration_minutes}-min service</p>
             <div className="mt-2 flex items-center gap-1 text-[13px] font-semibold text-[color:var(--text-secondary)]">
