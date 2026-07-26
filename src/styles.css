@@ -35,7 +35,7 @@
 
 :root {
   /* Badiyo brand */
-  --brand: #00B97A;
+  --brand: #0874FD;
   --brand-foreground: #FFFFFF;
   --charcoal: #222831;
   --text-secondary: #6B7280;
@@ -46,20 +46,20 @@
   --card-foreground: #222831;
   --popover: #FFFFFF;
   --popover-foreground: #222831;
-  --primary: #00B97A;
+  --primary: #0874FD;
   --primary-foreground: #FFFFFF;
   --secondary: #222831;
   --secondary-foreground: #FFFFFF;
   --muted: #F1F5F9;
   --muted-foreground: #6B7280;
   --accent: #E6F8F1;
-  --accent-foreground: #00B97A;
+  --accent-foreground: #0874FD;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   --border: #E5E7EB;
   --divider: #F1F5F9;
   --input: #E5E7EB;
-  --ring: #00B97A;
+  --ring: #0874FD;
 }
 
 @layer base {

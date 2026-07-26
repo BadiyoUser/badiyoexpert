@@ -324,8 +324,8 @@ function HomeDashboard() {
         <div
           className="rounded-[18px] border p-6 transition"
           style={{
-            backgroundColor: online ? "#00B97A" : "#FFFFFF",
-            borderColor: online ? "#00B97A" : "#E5E7EB",
+            backgroundColor: online ? "#0874FD" : "#FFFFFF",
+            borderColor: online ? "#0874FD" : "#E5E7EB",
             boxShadow: online ? "0 12px 32px -12px rgba(0,185,122,0.5)" : "0 4px 16px -8px rgba(34,40,49,0.08)",
           }}
         >
@@ -352,7 +352,7 @@ function HomeDashboard() {
             <span className="relative flex h-10 w-[72px] items-center rounded-full transition" style={{ backgroundColor: online ? "#FFFFFF" : "#E5E7EB" }}>
               <span
                 className="absolute h-8 w-8 rounded-full shadow-md transition-all"
-                style={{ left: online ? "36px" : "4px", backgroundColor: online ? "#00B97A" : "#FFFFFF" }}
+                style={{ left: online ? "36px" : "4px", backgroundColor: online ? "#0874FD" : "#FFFFFF" }}
               />
             </span>
           </button>
