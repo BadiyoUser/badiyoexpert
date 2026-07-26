@@ -1,9 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ChevronLeft, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera } from "lucide-react";
-import { useRef, useState } from "react";
+import { ChevronLeft, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera, Radio } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useExpert, useExpertSession, initials } from "@/lib/expert-client";
+import {
+  checkBackgroundLocation,
+  requestBackgroundLocation,
+  openAppLocationSettings,
+  type BgLocationStatus,
+} from "@/lib/background-location";
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
