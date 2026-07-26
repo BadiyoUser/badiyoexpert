@@ -28,6 +28,16 @@ function LoginScreen() {
     setLoading(true);
     setError(null);
     try {
+      // If this phone already has a PIN set, skip OTP and go straight to PIN entry.
+      try {
+        const { has_pin } = await expertApi.checkPin(digits);
+        if (has_pin) {
+          navigate({ to: "/pin", search: { phone: digits } });
+          return;
+        }
+      } catch {
+        // Fall back to OTP flow if the check fails.
+      }
       await expertApi.sendOtp(digits);
       navigate({ to: "/otp", search: { phone: digits } });
     } catch (err) {
