@@ -632,11 +632,11 @@ function HomeDashboard() {
                   </button>
                   <button
                     type="button"
-                    disabled={acceptBroadcast.isPending}
+                    disabled={acceptBroadcast.isPending && acceptBroadcast.variables === c.booking.id}
                     onClick={() => acceptBroadcast.mutate(c.booking.id)}
                     className="h-[52px] flex-[1.4] rounded-[14px] bg-primary text-[15px] font-bold text-white disabled:opacity-60"
                   >
-                    {acceptBroadcast.isPending ? "Accepting…" : "Accept"}
+                    {acceptBroadcast.isPending && acceptBroadcast.variables === c.booking.id ? "Accepting…" : "Accept"}
                   </button>
                 </div>
               </div>
