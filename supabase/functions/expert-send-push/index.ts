@@ -202,8 +202,12 @@ Deno.serve(async (req) => {
       }
     }
     if (failedTokens.length > 0) {
+      console.warn(`expert-send-push pruning ${failedTokens.length} invalid tokens`);
       await admin.from("expert_push_tokens").delete().in("fcm_token", failedTokens);
+      await admin.from("device_tokens").delete().in("fcm_token", failedTokens);
     }
+    console.log(`expert-send-push done: sent=${sent}/${tokens.length}`);
+
 
     return json({ ok: true, sent });
   } catch (err) {
