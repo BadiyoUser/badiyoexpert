@@ -326,8 +326,13 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
   const remainingMs = booking.service_end_at ? new Date(booking.service_end_at).getTime() - now : 0;
-  const mm = Math.max(0, Math.floor(remainingMs / 60000));
-  const ss = Math.max(0, Math.floor((remainingMs % 60000) / 1000));
+  const totalSec = Math.max(0, Math.floor(remainingMs / 1000));
+  const hh = Math.floor(totalSec / 3600);
+  const mm = Math.floor((totalSec % 3600) / 60);
+  const ss = totalSec % 60;
+  const timeText = hh > 0
+    ? `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`
+    : `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 
   async function verifyEnd(e?: React.FormEvent) {
     e?.preventDefault();
@@ -347,14 +352,14 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
       <div className="rounded-[18px] border-2 border-primary bg-[color:var(--color-accent)] p-5 text-center">
         <p className="text-[12px] font-bold uppercase tracking-wider text-primary">Time remaining</p>
         <p className="mt-1 font-mono text-[44px] font-bold leading-none text-primary">
-          {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+          {timeText}
         </p>
       </div>
 
       <form onSubmit={verifyEnd} className="mt-6">
         <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Enter end code</p>
         <h3 className="mt-1 text-[20px] font-bold text-foreground">Ask the customer for the completion code</h3>
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="mt-4 grid grid-cols-4 gap-3">
           {otp.map((d, i) => (
             <input key={i} ref={(el) => { inputs.current[i] = el; }} type="tel" inputMode="numeric" maxLength={1}
               value={d}
@@ -364,7 +369,7 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
                 if (v && i < 3) inputs.current[i + 1]?.focus();
               }}
               onKeyDown={(e) => { if (e.key === "Backspace" && !otp[i] && i > 0) inputs.current[i - 1]?.focus(); }}
-              className="h-16 flex-1 rounded-[14px] border border-border bg-card text-center text-[26px] font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="h-16 w-full min-w-0 rounded-[14px] border border-border bg-card text-center text-[26px] font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           ))}
         </div>
