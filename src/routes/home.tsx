@@ -132,12 +132,18 @@ function HomeDashboard() {
       console.log("[broadcast][evaluate] accepted candidate", booking.id, `${distanceKm.toFixed(2)}km`);
       let address: BroadcastCandidate["address"] = null;
       if (booking.address_id) {
-        const { data } = await supabase
-          .from("addresses")
-          .select("full_address, area, city")
-          .eq("id", booking.address_id)
-          .maybeSingle();
-        address = data ?? null;
+        // Use SECURITY DEFINER RPC — the RLS policy on `addresses` only allows
+        // reads for bookings already assigned to this expert, so a direct
+        // SELECT returns null during broadcast and the card shows a
+        // "Customer address" placeholder. The RPC returns the address when
+        // the booking is an open broadcast or already assigned to us.
+        const { data: addrRows, error: addrErr } = await supabase.rpc(
+          "get_broadcast_booking_address",
+          { p_booking_id: booking.id },
+        );
+        if (addrErr) console.warn("[broadcast][address] rpc error", addrErr);
+        const addr = Array.isArray(addrRows) ? addrRows[0] : addrRows;
+        if (addr) address = { full_address: addr.full_address, area: addr.area, city: addr.city };
       }
       const soundHandle = startNotificationLoop();
       setCandidates((prev) => {
@@ -150,6 +156,7 @@ function HomeDashboard() {
     },
     [online, isBusy, radiusKm],
   );
+
 
 
   // Subscribe to broadcast events while online
@@ -384,11 +391,22 @@ function HomeDashboard() {
       qc.invalidateQueries({ queryKey: ["expert", userId] });
       navigate({ to: "/booking/$id", params: { id: bookingId } });
     },
-    onError: (err: Error) => {
-      // Leave the card visible so the expert can retry / see what's going on.
-      console.warn("[broadcast][accept] failed", err);
-      toast.error(err.message || "Could not accept this booking.");
+    onError: (err: Error, bookingId) => {
+      const msg = err.message || "";
+      console.warn("[broadcast][accept] failed", { bookingId, msg });
+      // "Already accepted by another expert" is a terminal state for this
+      // card — auto-dismiss it so the expert isn't stuck tapping a dead
+      // card. Same for "not found" (booking deleted/completed elsewhere).
+      if (/already been accepted|already accepted|not found/i.test(msg)) {
+        toast.info("This booking was already accepted by another expert.");
+        removeCandidate(bookingId);
+        return;
+      }
+      // Every other error (radius, busy, network) — keep the card so the
+      // expert can retry, and surface the reason.
+      toast.error(msg || "Could not accept this booking.");
     },
+
   });
 
 
@@ -475,7 +493,7 @@ function HomeDashboard() {
           </button>
         </div>
 
-        {online && (
+        {online && !tracker.isHidden && (
           <div
             className={`mt-3 flex items-start gap-2 rounded-[14px] border p-3 ${
               locationFresh
@@ -507,6 +525,7 @@ function HomeDashboard() {
             </p>
           </div>
         )}
+
 
       </section>
 
@@ -595,8 +614,9 @@ function HomeDashboard() {
                       </p>
                     )}
                     <p className="mt-1 text-[12px] font-semibold text-[color:var(--text-secondary)]">
-                      {c.distanceKm.toFixed(1)} km away
+                      {c.distanceKm < 0.1 ? "Nearby" : `${c.distanceKm.toFixed(2)} km away`}
                     </p>
+
                   </div>
                 </div>
                 <div className="mt-4 flex gap-3">
