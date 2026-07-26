@@ -38,8 +38,9 @@ Deno.serve(async (req) => {
     };
     if (!res.ok) {
       if (res.error === "LOCKED") {
+        const secs = res.retry_after_seconds ?? 900;
         return json(
-          { error: "Too many wrong attempts. Try again later.", retry_after_seconds: res.retry_after_seconds },
+          { error: `Too many wrong attempts. Try again in ${secs} seconds.`, retry_after_seconds: secs },
           { status: 429 },
         );
       }
