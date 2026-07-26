@@ -96,6 +96,7 @@ async function ensureNativePermission(): Promise<void> {
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => {
+      dlog(`withTimeout FIRED: ${label} (${ms}ms)`);
       const err = new Error(`${label} timed out after ${ms}ms`) as Error & { code?: number };
       err.code = 3; // TIMEOUT
       reject(err);
