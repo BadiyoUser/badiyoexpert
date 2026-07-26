@@ -66,8 +66,11 @@ async function ensureNativePermission(): Promise<void> {
   // plugin also gates the call and will otherwise throw "application does
   // not have sufficient geolocation permissions".
   let perm = await Geo.checkPermissions();
+  console.log("[expert][geo] checkPermissions →", perm);
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+    console.log("[expert][geo] requesting permissions…");
     perm = await Geo.requestPermissions({ permissions: ["location", "coarseLocation"] });
+    console.log("[expert][geo] requestPermissions →", perm);
   }
   if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
     const err = new Error("Location permission denied") as Error & { code?: number };
@@ -76,28 +79,61 @@ async function ensureNativePermission(): Promise<void> {
   }
 }
 
+// Hard timeout wrapper — the OS/Capacitor `timeout` option is not always
+// honored on Android (some devices hang forever waiting for a GPS fix).
+// This guarantees the promise settles so the UI can never get stuck.
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => {
+      const err = new Error(`${label} timed out after ${ms}ms`) as Error & { code?: number };
+      err.code = 3; // TIMEOUT
+      reject(err);
+    }, ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
 async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
   const Geo = await getNativeGeolocation();
   if (Geo) {
     await ensureNativePermission();
-    const pos = await Geo.getCurrentPosition({
-      enableHighAccuracy: true,
-      maximumAge: 15_000,
-      timeout: 20_000,
-    });
-    return pos as unknown as GeolocationPosition;
-  }
-  return new Promise((resolve, reject) => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      reject(new Error("Geolocation not supported on this device."));
-      return;
+    console.log("[expert][geo] getCurrentPosition (native) start");
+    try {
+      const pos = await withTimeout(
+        Geo.getCurrentPosition({
+          enableHighAccuracy: true,
+          maximumAge: 15_000,
+          timeout: 15_000,
+        }),
+        15_000,
+        "getCurrentPosition",
+      );
+      console.log("[expert][geo] getCurrentPosition (native) success");
+      return pos as unknown as GeolocationPosition;
+    } catch (err) {
+      console.warn("[expert][geo] getCurrentPosition (native) failed", err);
+      throw err;
     }
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      maximumAge: 15_000,
-      timeout: 20_000,
-    });
-  });
+  }
+  return withTimeout(
+    new Promise<GeolocationPosition>((resolve, reject) => {
+      if (typeof navigator === "undefined" || !navigator.geolocation) {
+        reject(new Error("Geolocation not supported on this device."));
+        return;
+      }
+      console.log("[expert][geo] getCurrentPosition (web) start");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { console.log("[expert][geo] getCurrentPosition (web) success"); resolve(pos); },
+        (err) => { console.warn("[expert][geo] getCurrentPosition (web) error", err); reject(err); },
+        { enableHighAccuracy: true, maximumAge: 15_000, timeout: 15_000 },
+      );
+    }),
+    15_000,
+    "getCurrentPosition",
+  );
 }
 
 // Tracks device geolocation while `enabled` is true and pushes it to Supabase
