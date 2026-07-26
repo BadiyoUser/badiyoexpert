@@ -144,11 +144,44 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   });
 }
 
+// DIAGNOSTIC — set to true to skip Capacitor's checkPermissions/requestPermissions
+// dance and go straight to getCurrentPosition (which itself triggers the OS
+// prompt on Android). Remove together with the debug overlay once the toggle
+// hang is diagnosed.
+const SKIP_PERM_CHECK = true;
+
 async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
   dlog("getCurrentPositionOnce: entry");
   const Geo = await getNativeGeolocation();
+  dlog(`post-getNativeGeolocation: Geo=${Geo ? "truthy" : "null"}`);
   if (Geo) {
-    await ensureNativePermission();
+    if (SKIP_PERM_CHECK) {
+      dlog("SKIP_PERM_CHECK: calling getCurrentPosition directly");
+      try {
+        const pos = await hardTimeout(
+          Geo.getCurrentPosition({
+            enableHighAccuracy: true,
+            maximumAge: 15_000,
+            timeout: 15_000,
+          }),
+          15_000,
+          "getCurrentPosition(direct)",
+        );
+        dlog(`direct getCurrentPosition: ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
+        return pos as unknown as GeolocationPosition;
+      } catch (err) {
+        dlog(`direct getCurrentPosition FAILED: ${(err as Error).message}`);
+        throw err;
+      }
+    }
+    dlog("about to call ensureNativePermission");
+    try {
+      await ensureNativePermission();
+      dlog("ensureNativePermission returned OK");
+    } catch (e) {
+      dlog(`ensureNativePermission THREW: ${(e as Error).message}`);
+      throw e;
+    }
     dlog("getCurrentPosition: started (native)");
     console.log("[expert][geo] getCurrentPosition (native) start");
     try {
