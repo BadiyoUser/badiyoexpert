@@ -144,82 +144,62 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   });
 }
 
-// DIAGNOSTIC — set to true to skip Capacitor's checkPermissions/requestPermissions
-// dance and go straight to getCurrentPosition (which itself triggers the OS
-// prompt on Android). Remove together with the debug overlay once the toggle
-// hang is diagnosed.
-const SKIP_PERM_CHECK = true;
+// One-shot session flag: we call Capacitor Geolocation.requestPermissions()
+// exactly once per app session to trigger Android's native runtime permission
+// dialog. After that we rely purely on navigator.geolocation (which works
+// reliably in the WebView once the WebChromeClient override is in place AND
+// the OS-level permission has been granted).
+let osPermissionRequested = false;
+
+async function triggerNativeOsPermissionDialog(): Promise<void> {
+  if (osPermissionRequested) {
+    dlog("OS permission: already requested this session, skipping");
+    return;
+  }
+  osPermissionRequested = true;
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform?.()) {
+      dlog("OS permission: web platform, skipping native request");
+      return;
+    }
+    const { Geolocation } = await import("@capacitor/geolocation");
+    dlog("OS permission request triggered");
+    try {
+      const result = await hardTimeout(
+        Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] }),
+        5_000,
+        "requestPermissions(os-dialog)",
+      );
+      dlog(`OS permission result: ${result.location}/${result.coarseLocation}`);
+    } catch (e) {
+      dlog(`OS permission result: ${(e as Error).message}`);
+    }
+  } catch (e) {
+    dlog(`OS permission: plugin load failed: ${(e as Error).message}`);
+  }
+}
 
 async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
   dlog("getCurrentPositionOnce: entry");
-  const Geo = await getNativeGeolocation();
-  dlog(`post-getNativeGeolocation: Geo=${Geo ? "truthy" : "null"}`);
-  if (Geo) {
-    if (SKIP_PERM_CHECK) {
-      dlog("SKIP_PERM_CHECK: calling getCurrentPosition directly");
-      try {
-        const pos = await hardTimeout(
-          Geo.getCurrentPosition({
-            enableHighAccuracy: true,
-            maximumAge: 15_000,
-            timeout: 15_000,
-          }),
-          15_000,
-          "getCurrentPosition(direct)",
-        );
-        dlog(`direct getCurrentPosition: ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
-        return pos as unknown as GeolocationPosition;
-      } catch (err) {
-        dlog(`direct getCurrentPosition FAILED: ${(err as Error).message}`);
-        throw err;
-      }
-    }
-    dlog("about to call ensureNativePermission");
-    try {
-      await ensureNativePermission();
-      dlog("ensureNativePermission returned OK");
-    } catch (e) {
-      dlog(`ensureNativePermission THREW: ${(e as Error).message}`);
-      throw e;
-    }
-    dlog("getCurrentPosition: started (native)");
-    console.log("[expert][geo] getCurrentPosition (native) start");
-    try {
-      const pos = await withTimeout(
-        Geo.getCurrentPosition({
-          enableHighAccuracy: true,
-          maximumAge: 15_000,
-          timeout: 15_000,
-        }),
-        15_000,
-        "getCurrentPosition",
-      );
-      dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
-      console.log("[expert][geo] getCurrentPosition (native) success");
-      return pos as unknown as GeolocationPosition;
-    } catch (err) {
-      dlog(`getCurrentPosition: FAILED ${(err as Error).message}`);
-      console.warn("[expert][geo] getCurrentPosition (native) failed", err);
-      throw err;
-    }
-  }
-  dlog("getCurrentPosition: started (web)");
+  // Trigger the native Android OS permission dialog once per session before
+  // asking the WebView for a location fix. On web/iOS this is a no-op.
+  await triggerNativeOsPermissionDialog();
+
+  dlog("getCurrentPosition: started (navigator.geolocation)");
   return withTimeout(
     new Promise<GeolocationPosition>((resolve, reject) => {
       if (typeof navigator === "undefined" || !navigator.geolocation) {
         reject(new Error("Geolocation not supported on this device."));
         return;
       }
-      console.log("[expert][geo] getCurrentPosition (web) start");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           dlog(`getCurrentPosition: success ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
-          console.log("[expert][geo] getCurrentPosition (web) success");
           resolve(pos);
         },
         (err) => {
-          dlog(`getCurrentPosition: FAILED ${err.message}`);
-          console.warn("[expert][geo] getCurrentPosition (web) error", err);
+          dlog(`getCurrentPosition: FAILED code=${err.code} ${err.message}`);
           reject(err);
         },
         { enableHighAccuracy: true, maximumAge: 15_000, timeout: 15_000 },
@@ -229,6 +209,7 @@ async function getCurrentPositionOnce(): Promise<GeolocationPosition> {
     "getCurrentPosition",
   );
 }
+
 
 // Tracks device geolocation while `enabled` is true and pushes it to Supabase
 // on every fresh reading plus a 60s poll. Also exposes `ensureFix()` for the
