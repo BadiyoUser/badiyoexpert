@@ -117,31 +117,70 @@ export type Database = {
       }
       area_partners: {
         Row: {
+          address: string | null
+          bank_account_holder_name: string | null
+          bank_account_number: string | null
+          bank_ifsc: string | null
           commission_rate: number
           created_at: string
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
+          kyc_aadhaar_url: string | null
+          kyc_address_proof_url: string | null
+          kyc_pan_url: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
           name: string
           phone: string
+          photo_url: string | null
           setup_fee_status: string
           status: string
           zone_id: string | null
         }
         Insert: {
+          address?: string | null
+          bank_account_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
           commission_rate?: number
           created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
+          kyc_aadhaar_url?: string | null
+          kyc_address_proof_url?: string | null
+          kyc_pan_url?: string | null
+          kyc_rejection_reason?: string | null
+          kyc_status?: string
           name: string
           phone: string
+          photo_url?: string | null
           setup_fee_status?: string
           status?: string
           zone_id?: string | null
         }
         Update: {
+          address?: string | null
+          bank_account_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
           commission_rate?: number
           created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
+          kyc_aadhaar_url?: string | null
+          kyc_address_proof_url?: string | null
+          kyc_pan_url?: string | null
+          kyc_rejection_reason?: string | null
+          kyc_status?: string
           name?: string
           phone?: string
+          photo_url?: string | null
           setup_fee_status?: string
           status?: string
           zone_id?: string | null
@@ -1198,6 +1237,9 @@ export type Database = {
           boundary: Json
           city: string
           created_at: string
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           name: string
           status: string
@@ -1207,6 +1249,9 @@ export type Database = {
           boundary: Json
           city: string
           created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           name: string
           status?: string
@@ -1216,6 +1261,9 @@ export type Database = {
           boundary?: Json
           city?: string
           created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           name?: string
           status?: string
@@ -1427,6 +1475,10 @@ export type Database = {
         Args: { _booking_id: string }
         Returns: undefined
       }
+      staff_area_partner_kyc_decision: {
+        Args: { _decision: string; _partner_id: string; _reason: string }
+        Returns: undefined
+      }
       staff_assign_area_partner: {
         Args: { _partner_id: string; _zone_id: string }
         Returns: undefined
@@ -1460,6 +1512,10 @@ export type Database = {
         Args: { _booking_id: string; _new_expert_id: string }
         Returns: undefined
       }
+      staff_redraw_zone_boundary: {
+        Args: { _boundary: Json; _zone_id: string }
+        Returns: undefined
+      }
       staff_reject_booking: {
         Args: { _booking_id: string; _reason: string }
         Returns: undefined
@@ -1476,8 +1532,16 @@ export type Database = {
         Args: { _active: boolean; _id: string }
         Returns: undefined
       }
+      staff_soft_delete_area_partner: {
+        Args: { _partner_id: string; _reason: string }
+        Returns: undefined
+      }
       staff_soft_delete_booking: {
         Args: { _booking_id: string; _reason: string }
+        Returns: undefined
+      }
+      staff_soft_delete_zone: {
+        Args: { _reason: string; _zone_id: string }
         Returns: undefined
       }
       staff_update_booking_status: {
@@ -1490,6 +1554,10 @@ export type Database = {
       }
       staff_update_service_price: {
         Args: { _id: string; _payload: Json }
+        Returns: undefined
+      }
+      staff_update_zone: {
+        Args: { _payload: Json; _zone_id: string }
         Returns: undefined
       }
       staff_upsert_area_partner: { Args: { _payload: Json }; Returns: string }
@@ -1537,6 +1605,7 @@ export type Database = {
         Args: { p_phone: string; p_pin: string }
         Returns: Json
       }
+      zone_delete_impact: { Args: { _zone_id: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
