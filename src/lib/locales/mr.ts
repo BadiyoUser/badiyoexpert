@@ -76,7 +76,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "job.reject.confirm": "नाकारण्याची खात्री करा",
   "job.reject.rejecting": "नाकारत आहे…",
   "job.startCode.label": "सुरुवातीचा कोड टाका",
-  "job.startCode.title": "ग्राहकाकडून ४ अंकी कोड विचारा",
+  "job.startCode.title": "ग्राहकाकडून 4 अंकी कोड विचारा",
   "job.starting": "सुरू करत आहे…",
   "job.timeRemaining": "उरलेला वेळ",
   "job.endCode.label": "शेवटचा कोड टाका",
@@ -126,7 +126,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "profile.photo.change": "फोटो बदला",
   "profile.photo.upload": "फोटो अपलोड करा",
   "profile.err.imageOnly": "कृपया इमेज फाइल निवडा.",
-  "profile.err.tooLarge": "इमेज ५ MB पेक्षा कमी असावी.",
+  "profile.err.tooLarge": "इमेज 5 MB पेक्षा कमी असावी.",
   "profile.err.urlFailed": "URL तयार करता आली नाही",
   "profile.err.uploadFailed": "अपलोड अयशस्वी",
   "profile.section.skills": "कौशल्ये",
@@ -194,8 +194,8 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   // ---- Devices ----
   "devices.title": "सक्रिय डिव्हाइस",
   "devices.limitTitle": "डिव्हाइस मर्यादा पूर्ण",
-  "devices.intro": "तुम्ही जास्तीत जास्त २ डिव्हाइसवर साइन इन राहू शकता.",
-  "devices.limitIntro": "तुमचे खाते आधीच २ डिव्हाइसवर साइन इन आहे. या डिव्हाइसवर सुरू ठेवण्यासाठी एकातून लॉग आउट करा.",
+  "devices.intro": "तुम्ही जास्तीत जास्त 2 डिव्हाइसवर साइन इन राहू शकता.",
+  "devices.limitIntro": "तुमचे खाते आधीच 2 डिव्हाइसवर साइन इन आहे. या डिव्हाइसवर सुरू ठेवण्यासाठी एकातून लॉग आउट करा.",
   "devices.empty": "कोणतेही सक्रिय डिव्हाइस नाही.",
   "devices.unknown": "अज्ञात डिव्हाइस",
   "devices.thisDevice": "हे डिव्हाइस",
@@ -208,10 +208,10 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "devices.toast.logoutFailed": "डिव्हाइस लॉग आउट करता आले नाही",
 
   // ---- Set PIN ----
-  "setpin.title": "तुमचा ४ अंकी पिन सेट करा",
+  "setpin.title": "तुमचा 4 अंकी पिन सेट करा",
   "setpin.confirmTitle": "तुमचा पिन पुन्हा टाका",
   "setpin.sub": "पुढच्या वेळी साइन इन करण्यासाठी हा पिन वापराल.",
-  "setpin.confirmSub": "तेच ४ अंक पुन्हा टाका.",
+  "setpin.confirmSub": "तेच 4 अंक पुन्हा टाका.",
   "setpin.mismatch": "पिन जुळत नाहीत. पुन्हा प्रयत्न करा.",
   "setpin.saving": "सेव्ह होत आहे…",
   "setpin.saved": "पिन सेट झाला. पुढच्या वेळी याने साइन इन करा.",
@@ -221,7 +221,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   // ---- PIN login ----
   "pin.welcome": "पुन्हा स्वागत आहे",
   "pin.signInAs": "या क्रमांकाने साइन इन करा",
-  "pin.enter": "तुमचा ४ अंकी पिन टाका",
+  "pin.enter": "तुमचा 4 अंकी पिन टाका",
   "pin.verifying": "तपासत आहे…",
   "pin.forgot": "पिन विसरलात?",
   "pin.changeNumber": "क्रमांक बदला",
@@ -232,7 +232,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
 
   // ---- Login ----
   "login.title": "स्वागत आहे, एक्सपर्ट",
-  "login.sub": "तुमचा नोंदणीकृत मोबाइल क्रमांक टाका. आम्ही व्हॉट्सअ‍ॅपवर ४ अंकी कोड पाठवू.",
+  "login.sub": "तुमचा नोंदणीकृत मोबाइल क्रमांक टाका. आम्ही व्हॉट्सअ‍ॅपवर 4 अंकी कोड पाठवू.",
   "login.label": "मोबाइल क्रमांक",
   "login.placeholder": "98765 43210",
   "login.terms": "फक्त नोंदणीकृत बदिओ एक्सपर्ट साइन इन करू शकतात. पुढे जाऊन तुम्ही बदिओच्या अटी व गोपनीयता धोरणास सहमती देता.",
@@ -242,7 +242,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
 
   // ---- OTP ----
   "otp.title": "पडताळणी कोड टाका",
-  "otp.sub": "आम्ही व्हॉट्सअ‍ॅपवर ४ अंकी कोड पाठवला आहे",
+  "otp.sub": "आम्ही व्हॉट्सअ‍ॅपवर 4 अंकी कोड पाठवला आहे",
   "otp.resendIn": "{seconds}s नंतर कोड पुन्हा पाठवा",
   "otp.resend": "कोड पुन्हा पाठवा",
   "otp.verify": "पडताळा",
@@ -264,9 +264,9 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "rewards.perk.priority.title": "प्राधान्याने बुकिंग",
   "rewards.perk.priority.desc": "सिल्व्हर+ एक्सपर्टना आधी संधी मिळते.",
   "rewards.perk.payout.title": "जलद पेआउट",
-  "rewards.perk.payout.desc": "गोल्ड+ एक्सपर्टना ३ दिवसांचे पेआउट चक्र मिळते.",
+  "rewards.perk.payout.desc": "गोल्ड+ एक्सपर्टना 3 दिवसांचे पेआउट चक्र मिळते.",
   "rewards.perk.bonus.title": "टप्पा बोनस",
-  "rewards.perk.bonus.desc": "\u20b9500 — ५० कामे पूर्ण केल्यावर.",
+  "rewards.perk.bonus.desc": "\u20b9500 — 50 कामे पूर्ण केल्यावर.",
   "rewards.soon": "बक्षीस कार्यक्रम लवकरच येत आहे.",
   "rewards.level.bronze": "ब्राँझ",
   "rewards.level.silver": "सिल्व्हर",
