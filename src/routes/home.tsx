@@ -106,16 +106,13 @@ function HomeDashboard() {
   const { data: dispatchCfg } = useQuery({
     queryKey: ["dispatch-config"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dispatch_config")
-        .select("broadcast_radius_km")
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_broadcast_radius_km");
       if (error) throw error;
-      return data;
+      return data as number | null;
     },
   });
-  const radiusKm = Number(dispatchCfg?.broadcast_radius_km ?? 5);
+  const radiusKm = Number(dispatchCfg ?? 5);
+
 
   // Broadcast queue
   const [candidates, setCandidates] = useState<BroadcastCandidate[]>([]);
