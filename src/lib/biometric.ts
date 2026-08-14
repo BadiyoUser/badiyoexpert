@@ -29,7 +29,7 @@ export async function isBiometricAvailable(): Promise<BiometricAvailability> {
   }
 }
 
-export async function promptBiometric(reason = "Unlock Badiyo Expert"): Promise<{ ok: boolean; error?: string }> {
+export async function promptBiometric(reason = "Unlock badiyos Expert"): Promise<{ ok: boolean; error?: string }> {
   const mod = await loadPlugin();
   if (!mod) return { ok: false, error: "plugin-missing" };
   try {
@@ -38,7 +38,7 @@ export async function promptBiometric(reason = "Unlock Badiyo Expert"): Promise<
       cancelTitle: "Use PIN",
       allowDeviceCredential: false,
       iosFallbackTitle: "Enter PIN",
-      androidTitle: "Badiyo Expert",
+      androidTitle: "badiyos Expert",
       androidSubtitle: "Unlock with biometrics",
       androidConfirmationRequired: false,
     });

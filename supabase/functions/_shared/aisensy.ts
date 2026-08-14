@@ -16,7 +16,7 @@ export async function sendAiSensyTemplate(opts: {
     apiKey,
     campaignName: opts.campaignName,
     destination: dest,
-    userName: opts.userName ?? "Badiyo Expert",
+    userName: opts.userName ?? "badiyos Expert",
     templateParams: opts.templateParams ?? [],
   };
   if (opts.buttons && opts.buttons.length > 0) {

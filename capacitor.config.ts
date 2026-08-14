@@ -6,7 +6,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // runtime configuration.
 const config: CapacitorConfig = {
   appId: "com.badiyo.expert",
-  appName: "Badiyo Expert",
+  appName: "badiyos Expert",
   webDir: "dist",
   plugins: {
     StatusBar: {
