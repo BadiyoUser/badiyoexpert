@@ -184,6 +184,16 @@ function ProfileScreen() {
           </div>
           <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
         </Link>
+        <Link to="/devices" search={{}} className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
+            <Smartphone className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Security</p>
+            <p className="text-[15px] font-semibold text-foreground">Active devices</p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
+        </Link>
         <Row Icon={Award} label="Level" value={(expert?.level ?? "bronze").toString().toUpperCase()} />
         <Row Icon={ShieldCheck} label="KYC" value={(expert?.kyc_status ?? "pending").toString().toUpperCase()} highlight={expert?.kyc_status === "approved"} />
         <Row Icon={Phone} label="Phone" value={`+91 ${expert?.phone ?? ""}`} />
