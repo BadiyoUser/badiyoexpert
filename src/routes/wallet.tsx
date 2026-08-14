@@ -3,6 +3,7 @@ import { ChevronLeft, Loader2, ArrowDownLeft, ArrowUpRight } from "lucide-react"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpert, useExpertSession, formatINR } from "@/lib/expert-client";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({
@@ -17,12 +18,13 @@ export const Route = createFileRoute("/wallet")({
 // Replaces any 8+ hex-char UUID-ish token inside a reason label with a short
 // "#xxxxxx" tag (first 6 chars), matching the Command Center booking-id style.
 const UUID_RE = /\b[0-9a-f]{8}(?:-?[0-9a-f]{4}){3}-?[0-9a-f]{12}\b/gi;
-function formatReason(reason: string | null, type: "credit" | "debit" | string): string {
-  if (!reason) return type === "credit" ? "Credit" : "Debit";
+function formatReason(reason: string | null, type: "credit" | "debit" | string, fallback: { credit: string; debit: string }): string {
+  if (!reason) return type === "credit" ? fallback.credit : fallback.debit;
   return reason.replace(UUID_RE, (uuid) => `#${uuid.replace(/-/g, "").slice(0, 6)}`);
 }
 
 function WalletScreen() {
+  const t = useT();
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
 
@@ -52,34 +54,34 @@ function WalletScreen() {
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <h1 className="text-[22px] font-bold text-foreground">Wallet</h1>
+        <h1 className="text-[22px] font-bold text-foreground">{t("wallet.title")}</h1>
       </header>
 
       <section className="px-6">
         <div className="rounded-[18px] bg-primary p-6 text-primary-foreground shadow-[var(--shadow-brand-md)]">
-          <p className="text-[13px] font-semibold uppercase tracking-wider opacity-85">Wallet balance</p>
+          <p className="text-[13px] font-semibold uppercase tracking-wider opacity-85">{t("wallet.balance.label")}</p>
           <p className="mt-2 text-[36px] font-bold leading-none">{formatINR(expert?.wallet_balance ?? 0)}</p>
-          <p className="mt-2 text-[13px] opacity-85">Weekly payouts processed by the Badiyo team.</p>
+          <p className="mt-2 text-[13px] opacity-85">{t("wallet.balance.note")}</p>
         </div>
       </section>
 
       <section className="mt-6 px-6">
-        <h2 className="text-[16px] font-bold text-foreground">Recent transactions</h2>
+        <h2 className="text-[16px] font-bold text-foreground">{t("wallet.tx.title")}</h2>
         {items.length === 0 ? (
-          <p className="mt-4 text-[13px] text-[color:var(--text-secondary)]">No transactions yet.</p>
+          <p className="mt-4 text-[13px] text-[color:var(--text-secondary)]">{t("wallet.tx.empty")}</p>
         ) : (
           <ul className="mt-3 space-y-2">
-            {items.map((t) => (
-              <li key={t.id} className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-4">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${t.type === "credit" ? "bg-[color:var(--color-accent)] text-primary" : "bg-red-50 text-red-600"}`}>
-                  {t.type === "credit" ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
+            {items.map((tx) => (
+              <li key={tx.id} className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-4">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${tx.type === "credit" ? "bg-[color:var(--color-accent)] text-primary" : "bg-red-50 text-red-600"}`}>
+                  {tx.type === "credit" ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-[14px] font-semibold text-foreground">{formatReason(t.reason, t.type)}</p>
-                  <p className="text-[12px] text-[color:var(--text-secondary)]">{new Date(t.created_at).toLocaleString("en-IN")}</p>
+                  <p className="text-[14px] font-semibold text-foreground">{formatReason(tx.reason, tx.type, { credit: t("wallet.credit"), debit: t("wallet.debit") })}</p>
+                  <p className="text-[12px] text-[color:var(--text-secondary)]">{new Date(tx.created_at).toLocaleString("en-IN")}</p>
                 </div>
-                <span className={`text-[15px] font-bold ${t.type === "credit" ? "text-primary" : "text-red-600"}`}>
-                  {t.type === "credit" ? "+" : "−"}{formatINR(t.amount)}
+                <span className={`text-[15px] font-bold ${tx.type === "credit" ? "text-primary" : "text-red-600"}`}>
+                  {tx.type === "credit" ? "+" : "−"}{formatINR(tx.amount)}
                 </span>
               </li>
             ))}
