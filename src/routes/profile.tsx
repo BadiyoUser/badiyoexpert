@@ -174,11 +174,22 @@ function ProfileScreen() {
       </section>
 
       <section className="mt-6 space-y-2 px-6">
+        <Link to="/skills" className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
+            <Wrench className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Skills</p>
+            <p className="text-[15px] font-semibold text-foreground">My Skills</p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
+        </Link>
         <Row Icon={Award} label="Level" value={(expert?.level ?? "bronze").toString().toUpperCase()} />
         <Row Icon={ShieldCheck} label="KYC" value={(expert?.kyc_status ?? "pending").toString().toUpperCase()} highlight={expert?.kyc_status === "approved"} />
         <Row Icon={Phone} label="Phone" value={`+91 ${expert?.phone ?? ""}`} />
         {expert?.address && <Row Icon={MapPin} label="Address" value={expert.address} />}
       </section>
+
 
       {bgStatus && !bgStatus.unavailable && (
         <section className="mt-6 px-6">
