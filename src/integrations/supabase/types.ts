@@ -73,6 +73,21 @@ export type Database = {
         }
         Relationships: []
       }
+      _device_limit_test: {
+        Row: {
+          result: Json | null
+          step: string | null
+        }
+        Insert: {
+          result?: Json | null
+          step?: string | null
+        }
+        Update: {
+          result?: Json | null
+          step?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           area: string | null
