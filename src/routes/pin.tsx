@@ -7,6 +7,7 @@ import { clearStoredPin } from "@/lib/secure-pin-storage";
 import { registerThisDevice } from "@/lib/devices";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 
 const searchSchema = z.object({ phone: z.string().optional() });
 
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/pin")({
 });
 
 function PinScreen() {
+  const t = useT();
   const { phone } = Route.useSearch();
   const navigate = useNavigate();
   const [digits, setDigits] = useState<string[]>(["", "", "", ""]);
@@ -57,7 +59,7 @@ function PinScreen() {
         }
         navigate({ to: "/home" });
       } catch (err) {
-        const msg = (err as Error).message ?? "Login failed";
+        const msg = (err as Error).message ?? t("pin.loginFailed");
         const match = msg.match(/(\d+)\s*seconds?/i);
         if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("locked")) {
           setLocked(match ? Number(match[1]) : 15 * 60);
@@ -70,7 +72,7 @@ function PinScreen() {
         setLoading(false);
       }
     },
-    [phone, loading, navigate],
+    [phone, loading, navigate, t],
   );
 
   // Lockout countdown
@@ -103,7 +105,7 @@ function PinScreen() {
       await clearStoredPin();
       navigate({ to: "/otp", search: { phone } });
     } catch (err) {
-      toast.error((err as Error).message ?? "Failed to send OTP");
+      toast.error((err as Error).message ?? t("pin.otpFailed"));
     } finally {
       setLoading(false);
     }
@@ -117,15 +119,15 @@ function PinScreen() {
         </div>
 
         <div className="mt-10 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("pin.welcome")}</h1>
           <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
-            Sign in as{" "}
+            {t("pin.signInAs")}{" "}
             <span className="font-semibold text-foreground">+91 {phone}</span>
           </p>
         </div>
 
         <p className="mt-10 text-center text-sm font-semibold text-foreground">
-          Enter your 4-digit PIN
+          {t("pin.enter")}
         </p>
         <div className="mt-4 flex justify-center gap-3">
           {digits.map((d, i) => (
@@ -153,11 +155,11 @@ function PinScreen() {
         )}
         {locked > 0 && (
           <p className="mt-2 text-center text-xs text-[color:var(--text-secondary)]">
-            Try again in {Math.ceil(locked / 60)} min ({locked}s)
+            {t("pin.lockedIn", { min: Math.ceil(locked / 60), sec: locked })}
           </p>
         )}
         {loading && (
-          <p className="mt-4 text-center text-sm text-[color:var(--text-secondary)]">Verifying…</p>
+          <p className="mt-4 text-center text-sm text-[color:var(--text-secondary)]">{t("pin.verifying")}</p>
         )}
 
         <div className="mt-8 flex flex-col items-center gap-3 text-sm">
@@ -167,19 +169,19 @@ function PinScreen() {
             disabled={loading}
             className="font-semibold text-primary disabled:opacity-50"
           >
-            Forgot PIN?
+            {t("pin.forgot")}
           </button>
           <button
             type="button"
             onClick={() => navigate({ to: "/login" })}
             className="text-[color:var(--text-secondary)]"
           >
-            Change number
+            {t("pin.changeNumber")}
           </button>
         </div>
 
         <p className="mt-auto pt-10 text-center text-xs text-[color:var(--text-secondary)]">
-          By continuing, you agree to Badiyo's Terms & Privacy Policy.
+          {t("pin.terms")}
         </p>
       </div>
     </main>

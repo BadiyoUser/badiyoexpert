@@ -4,6 +4,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 
 
 const searchSchema = z.object({ phone: z.string().optional() });
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/set-pin")({
 });
 
 function SetPinScreen() {
+  const t = useT();
   const { phone } = Route.useSearch();
   const navigate = useNavigate();
   const [step, setStep] = useState<"enter" | "confirm">("enter");
@@ -65,7 +67,7 @@ function SetPinScreen() {
   const submit = async (first: string, second: string) => {
     setError(null);
     if (first !== second) {
-      setError("PINs don't match. Try again.");
+      setError(t("setpin.mismatch"));
       setPin1(["", "", "", ""]);
       setPin2(["", "", "", ""]);
       setStep("enter");
@@ -75,11 +77,11 @@ function SetPinScreen() {
     try {
       const { error: rpcErr } = await supabase.rpc("set_login_pin", { p_pin: first });
       if (rpcErr) throw rpcErr;
-      toast.success("PIN set. Use it to sign in next time.");
+      toast.success(t("setpin.saved"));
       navigate({ to: "/home" });
 
     } catch (err) {
-      setError((err as Error).message ?? "Could not save PIN");
+      setError((err as Error).message ?? t("setpin.saveFailed"));
       setPin1(["", "", "", ""]);
       setPin2(["", "", "", ""]);
       setStep("enter");
@@ -97,12 +99,10 @@ function SetPinScreen() {
 
         <div className="mt-10 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {step === "enter" ? "Set your 4-digit PIN" : "Confirm your PIN"}
+            {step === "enter" ? t("setpin.title") : t("setpin.confirmTitle")}
           </h1>
           <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
-            {step === "enter"
-              ? "You'll use this PIN to sign in next time."
-              : "Re-enter the same 4 digits."}
+            {step === "enter" ? t("setpin.sub") : t("setpin.confirmSub")}
           </p>
 
         </div>
@@ -132,11 +132,11 @@ function SetPinScreen() {
           </p>
         )}
         {saving && (
-          <p className="mt-4 text-center text-sm text-[color:var(--text-secondary)]">Saving…</p>
+          <p className="mt-4 text-center text-sm text-[color:var(--text-secondary)]">{t("setpin.saving")}</p>
         )}
 
         <p className="mt-auto pt-10 text-center text-xs text-[color:var(--text-secondary)]">
-          Your PIN is stored securely on this device.
+          {t("setpin.footer")}
         </p>
       </div>
     </main>
