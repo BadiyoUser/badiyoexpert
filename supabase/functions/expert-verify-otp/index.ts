@@ -9,7 +9,7 @@ function normalize(phone: string): string {
 }
 
 function expertEmail(digits: string) {
-  return `expert-${digits}@badiyo.internal`;
+  return `expert-${digits}@badiyos.internal`;
 }
 
 Deno.serve(async (req) => {
