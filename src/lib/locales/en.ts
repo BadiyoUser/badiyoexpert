@@ -93,7 +93,6 @@ export const en = {
   "lang.english": "English",
   "lang.marathi": "मराठी (Marathi)",
   "lang.saveFailed": "Could not update language. Please try again.",
-} as const;
   // ---- Common ----
   "common.back": "Back",
 
@@ -269,4 +268,4 @@ export const en = {
   "rewards.soon": "Rewards program coming soon.",
   "rewards.level.bronze": "Bronze",
   "rewards.level.silver": "Silver",
-
+} as const;
