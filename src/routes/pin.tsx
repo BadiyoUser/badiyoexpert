@@ -4,6 +4,7 @@ import { z } from "zod";
 import { expertApi } from "@/lib/expert-client";
 import { supabase } from "@/integrations/supabase/client";
 import { clearStoredPin } from "@/lib/secure-pin-storage";
+import { registerThisDevice } from "@/lib/devices";
 import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
 import { toast } from "sonner";
 
@@ -49,6 +50,11 @@ function PinScreen() {
           type: "magiclink",
         });
         if (vErr) throw vErr;
+        const reg = await registerThisDevice().catch(() => ({ status: "registered" as const }));
+        if (reg.status === "limit_reached") {
+          navigate({ to: "/devices", search: { limit: "1" } });
+          return;
+        }
         navigate({ to: "/home" });
       } catch (err) {
         const msg = (err as Error).message ?? "Login failed";
