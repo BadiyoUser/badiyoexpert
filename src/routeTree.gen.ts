@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SosRouteImport } from './routes/sos'
+import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SetPinRouteImport } from './routes/set-pin'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -37,6 +38,11 @@ const SupportRoute = SupportRouteImport.update({
 const SosRoute = SosRouteImport.update({
   id: '/sos',
   path: '/sos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkillsRoute = SkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetPinRoute = SetPinRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
   '/set-pin': typeof SetPinRoute
+  '/skills': typeof SkillsRoute
   '/sos': typeof SosRoute
   '/support': typeof SupportRoute
   '/wallet': typeof WalletRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
   '/set-pin': typeof SetPinRoute
+  '/skills': typeof SkillsRoute
   '/sos': typeof SosRoute
   '/support': typeof SupportRoute
   '/wallet': typeof WalletRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
   '/set-pin': typeof SetPinRoute
+  '/skills': typeof SkillsRoute
   '/sos': typeof SosRoute
   '/support': typeof SupportRoute
   '/wallet': typeof WalletRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/rewards'
     | '/set-pin'
+    | '/skills'
     | '/sos'
     | '/support'
     | '/wallet'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/rewards'
     | '/set-pin'
+    | '/skills'
     | '/sos'
     | '/support'
     | '/wallet'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/rewards'
     | '/set-pin'
+    | '/skills'
     | '/sos'
     | '/support'
     | '/wallet'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   RewardsRoute: typeof RewardsRoute
   SetPinRoute: typeof SetPinRoute
+  SkillsRoute: typeof SkillsRoute
   SosRoute: typeof SosRoute
   SupportRoute: typeof SupportRoute
   WalletRoute: typeof WalletRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/sos'
       fullPath: '/sos'
       preLoaderRoute: typeof SosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skills': {
+      id: '/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof SkillsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/set-pin': {
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   RewardsRoute: RewardsRoute,
   SetPinRoute: SetPinRoute,
+  SkillsRoute: SkillsRoute,
   SosRoute: SosRoute,
   SupportRoute: SupportRoute,
   WalletRoute: WalletRoute,

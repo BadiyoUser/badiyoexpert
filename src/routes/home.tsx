@@ -62,7 +62,22 @@ function HomeDashboard() {
 
   const online = !!expert?.is_online;
   const isBusy = !!expert?.is_busy;
+  const approvedSkills = useQuery({
+    queryKey: ["approved-skills-count", expert?.id],
+    enabled: !!expert?.id,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("partner_skills")
+        .select("id", { count: "exact", head: true })
+        .eq("expert_id", expert!.id)
+        .eq("status", "approved");
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  const needsSkillSetup = approvedSkills.data === 0;
   const tracker = useExpertLocationTracking(online);
+
   const locationState = tracker.state;
   const coordsRef = useRef<Coords | null>(null);
   useEffect(() => {
