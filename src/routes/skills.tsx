@@ -10,7 +10,7 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/skills")({
   head: () => ({
     meta: [
-      { title: "My Skills — Badiyo Expert" },
+      { title: "My Skills — badiyos Expert" },
       { name: "description", content: "View your approved skills and request new service categories." },
     ],
   }),

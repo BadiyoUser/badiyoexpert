@@ -16,8 +16,8 @@ import { useLanguage, type Lang } from "@/lib/i18n";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Profile — Badiyo Expert" },
-      { name: "description", content: "Your Badiyo Expert profile." },
+      { title: "Profile — badiyos Expert" },
+      { name: "description", content: "Your badiyos Expert profile." },
     ],
   }),
   component: ProfileScreen,

@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         const waResp = await sendAiSensyTemplate({
           campaignName: SOS_CAMPAIGN,
           destination: SUPPORT_PHONE,
-          userName: "Badiyo Support",
+          userName: "badiyos Support",
           templateParams: [
             expert.name,
             expert.phone,

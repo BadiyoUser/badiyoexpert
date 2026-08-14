@@ -111,7 +111,7 @@ export const en = {
   // ---- Wallet ----
   "wallet.title": "Wallet",
   "wallet.balance.label": "Wallet balance",
-  "wallet.balance.note": "Weekly payouts processed by the Badiyo team.",
+  "wallet.balance.note": "Weekly payouts processed by the badiyos team.",
   "wallet.tx.title": "Recent transactions",
   "wallet.tx.empty": "No transactions yet.",
   "wallet.credit": "Credit",
@@ -137,7 +137,7 @@ export const en = {
   "profile.row.address": "Address",
   "profile.bg.section": "Background availability",
   "profile.bg.title": "Enable background job alerts",
-  "profile.bg.desc": "Allow Badiyo to access your location even when the app is closed, so you never miss a nearby job.",
+  "profile.bg.desc": "Allow badiyos to access your location even when the app is closed, so you never miss a nearby job.",
   "profile.bg.granted": "Granted",
   "profile.bg.notGranted": "Not granted",
   "profile.bg.enable": "Enable background alerts",
@@ -156,7 +156,7 @@ export const en = {
   "sos.sending": "Sending alert…",
   "sos.callDirect": "Or call support directly",
   "sos.sent.title": "Alert sent",
-  "sos.sent.sub": "Badiyo Support has been notified on WhatsApp and will contact you shortly.",
+  "sos.sent.sub": "badiyos Support has been notified on WhatsApp and will contact you shortly.",
   "sos.callSupport": "Call Support",
   "sos.back": "Back to home",
 
@@ -172,7 +172,7 @@ export const en = {
 
   // ---- Skills ----
   "skills.title": "My Skills",
-  "skills.intro": "You only receive jobs for skills that have been approved by the Badiyo team.",
+  "skills.intro": "You only receive jobs for skills that have been approved by the badiyos team.",
   "skills.group.approved": "Approved",
   "skills.group.pending": "Pending review",
   "skills.group.rejected": "Rejected",
@@ -223,7 +223,7 @@ export const en = {
   "pin.verifying": "Verifying…",
   "pin.forgot": "Forgot PIN?",
   "pin.changeNumber": "Change number",
-  "pin.terms": "By continuing, you agree to Badiyo's Terms & Privacy Policy.",
+  "pin.terms": "By continuing, you agree to badiyos' Terms & Privacy Policy.",
   "pin.lockedIn": "Try again in {min} min ({sec}s)",
   "pin.loginFailed": "Login failed",
   "pin.otpFailed": "Failed to send OTP",
@@ -233,7 +233,7 @@ export const en = {
   "login.sub": "Enter your registered mobile number. We'll send a 4-digit code on WhatsApp.",
   "login.label": "Mobile number",
   "login.placeholder": "98765 43210",
-  "login.terms": "Only registered Badiyo Experts can sign in. By continuing you agree to Badiyo's Terms and Privacy Policy.",
+  "login.terms": "Only registered badiyos Experts can sign in. By continuing you agree to badiyos' Terms and Privacy Policy.",
   "login.send": "Send code",
   "login.sending": "Sending…",
   "login.failed": "Failed to send code",
@@ -250,8 +250,8 @@ export const en = {
 
   // ---- Not registered ----
   "nr.title": "Not a registered Expert yet",
-  "nr.sub": "This number isn't onboarded with Badiyo. Contact our team to become a certified Expert.",
-  "nr.call": "Call Badiyo Team",
+  "nr.sub": "This number isn't onboarded with badiyos. Contact our team to become a certified Expert.",
+  "nr.call": "Call badiyos Team",
   "nr.whatsapp": "WhatsApp us",
 
   // ---- Rewards ----

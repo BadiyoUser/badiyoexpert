@@ -8,7 +8,7 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/wallet")({
   head: () => ({
     meta: [
-      { title: "Wallet — Badiyo Expert" },
+      { title: "Wallet — badiyos Expert" },
       { name: "description", content: "Your earnings and payout history." },
     ],
   }),

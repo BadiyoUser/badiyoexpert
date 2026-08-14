@@ -1,15 +1,15 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronLeft, Phone, Loader2 } from "lucide-react";
-import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
+import badiyosGreen from "@/assets/badiyos-green.png.asset.json";
 import { expertApi } from "@/lib/expert-client";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Badiyo Expert" },
-      { name: "description", content: "Sign in to Badiyo Expert with your registered mobile number." },
+      { title: "Sign in — badiyos Expert" },
+      { name: "description", content: "Sign in to badiyos Expert with your registered mobile number." },
     ],
   }),
   component: LoginScreen,
@@ -57,7 +57,7 @@ function LoginScreen() {
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.5rem)]">
       <div className="flex items-center justify-center py-8">
-        <img src={badiyoGreen.url} alt="Badiyo" className="h-10 w-auto" />
+        <img src={badiyosGreen.url} alt="badiyos" className="h-10 w-auto" />
       </div>
       <div className="mt-4">
         <h1 className="text-[28px] font-bold leading-tight text-foreground">{t("login.title")}</h1>

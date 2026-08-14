@@ -11,8 +11,8 @@ export const Route = createFileRoute("/sos")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "SOS — Badiyo Expert" },
-      { name: "description", content: "Emergency alert to the Badiyo Support team." },
+      { title: "SOS — badiyos Expert" },
+      { name: "description", content: "Emergency alert to the badiyos Support team." },
     ],
   }),
   component: SosScreen,

@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/booking/$id")({
   head: () => ({
     meta: [
-      { title: "Booking — Badiyo Expert" },
+      { title: "Booking — badiyos Expert" },
       { name: "description", content: "Manage your assigned booking." },
     ],
   }),

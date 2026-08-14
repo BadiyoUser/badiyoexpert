@@ -20,8 +20,8 @@ export const Route = createFileRoute("/devices")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Active devices — Badiyo Expert" },
-      { name: "description", content: "Manage the devices signed in to your Badiyo Expert account." },
+      { title: "Active devices — badiyos Expert" },
+      { name: "description", content: "Manage the devices signed in to your badiyos Expert account." },
     ],
   }),
   component: DevicesScreen,
