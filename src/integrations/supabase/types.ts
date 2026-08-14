@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      _deprecated_expert_push_tokens: {
+        Row: {
+          created_at: string
+          expert_id: string
+          fcm_token: string
+          id: string
+          platform: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expert_id: string
+          fcm_token: string
+          id?: string
+          platform?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expert_id?: string
+          fcm_token?: string
+          id?: string
+          platform?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_push_tokens_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      _deprecated_fcm_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           area: string | null
@@ -122,6 +181,8 @@ export type Database = {
           bank_account_number: string | null
           bank_ifsc: string | null
           commission_rate: number
+          commission_type: string
+          commission_value: number
           created_at: string
           delete_reason: string | null
           deleted_at: string | null
@@ -145,6 +206,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_ifsc?: string | null
           commission_rate?: number
+          commission_type?: string
+          commission_value?: number
           created_at?: string
           delete_reason?: string | null
           deleted_at?: string | null
@@ -168,6 +231,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_ifsc?: string | null
           commission_rate?: number
+          commission_type?: string
+          commission_value?: number
           created_at?: string
           delete_reason?: string | null
           deleted_at?: string | null
@@ -269,11 +334,13 @@ export type Database = {
           assigned_expert_id: string | null
           booking_lat: number | null
           booking_lng: number | null
+          broadcast_started_at: string | null
           cancellation_fee: number | null
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
           created_at: string | null
+          current_search_radius_km: number | null
           delete_reason: string | null
           deleted_at: string | null
           deleted_by: string | null
@@ -289,6 +356,7 @@ export type Database = {
           review_text: string | null
           scheduled_date: string | null
           scheduled_time_slot: string | null
+          service_category_id: string | null
           service_duration_minutes: number
           service_end_at: string | null
           service_label: string
@@ -305,11 +373,13 @@ export type Database = {
           assigned_expert_id?: string | null
           booking_lat?: number | null
           booking_lng?: number | null
+          broadcast_started_at?: string | null
           cancellation_fee?: number | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           created_at?: string | null
+          current_search_radius_km?: number | null
           delete_reason?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
@@ -325,6 +395,7 @@ export type Database = {
           review_text?: string | null
           scheduled_date?: string | null
           scheduled_time_slot?: string | null
+          service_category_id?: string | null
           service_duration_minutes: number
           service_end_at?: string | null
           service_label: string
@@ -341,11 +412,13 @@ export type Database = {
           assigned_expert_id?: string | null
           booking_lat?: number | null
           booking_lng?: number | null
+          broadcast_started_at?: string | null
           cancellation_fee?: number | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           created_at?: string | null
+          current_search_radius_km?: number | null
           delete_reason?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
@@ -361,6 +434,7 @@ export type Database = {
           review_text?: string | null
           scheduled_date?: string | null
           scheduled_time_slot?: string | null
+          service_category_id?: string | null
           service_duration_minutes?: number
           service_end_at?: string | null
           service_label?: string
@@ -388,6 +462,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_service_category_id_fkey"
+            columns: ["service_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -402,6 +483,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      device_sessions: {
+        Row: {
+          created_at: string
+          device_id: string
+          device_label: string | null
+          id: string
+          last_active_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          device_label?: string | null
+          id?: string
+          last_active_at?: string
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          device_label?: string | null
+          id?: string
+          last_active_at?: string
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
       }
       device_tokens: {
         Row: {
@@ -443,6 +554,9 @@ export type Database = {
           city: string
           created_at: string
           id: string
+          radius_expand_after_seconds: number
+          radius_expand_max_km: number
+          radius_expand_step_km: number
           updated_at: string
         }
         Insert: {
@@ -451,6 +565,9 @@ export type Database = {
           city?: string
           created_at?: string
           id?: string
+          radius_expand_after_seconds?: number
+          radius_expand_max_km?: number
+          radius_expand_step_km?: number
           updated_at?: string
         }
         Update: {
@@ -459,6 +576,9 @@ export type Database = {
           city?: string
           created_at?: string
           id?: string
+          radius_expand_after_seconds?: number
+          radius_expand_max_km?: number
+          radius_expand_step_km?: number
           updated_at?: string
         }
         Relationships: []
@@ -565,44 +685,10 @@ export type Database = {
         }
         Relationships: []
       }
-      expert_push_tokens: {
-        Row: {
-          created_at: string
-          expert_id: string
-          fcm_token: string
-          id: string
-          platform: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          expert_id: string
-          fcm_token: string
-          id?: string
-          platform?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          expert_id?: string
-          fcm_token?: string
-          id?: string
-          platform?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expert_push_tokens_expert_id_fkey"
-            columns: ["expert_id"]
-            isOneToOne: false
-            referencedRelation: "experts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       experts: {
         Row: {
           address: string | null
+          approved_by: string | null
           auth_user_id: string | null
           bank_account_holder_name: string | null
           bank_account_number: string | null
@@ -621,9 +707,11 @@ export type Database = {
           level: string
           location_updated_at: string | null
           name: string
+          onboarded_by: string | null
           phone: string
           photo_url: string | null
           pin_hash: string | null
+          preferred_language: string
           security_deposit_status: string
           status: string
           wallet_balance: number
@@ -631,6 +719,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approved_by?: string | null
           auth_user_id?: string | null
           bank_account_holder_name?: string | null
           bank_account_number?: string | null
@@ -649,9 +738,11 @@ export type Database = {
           level?: string
           location_updated_at?: string | null
           name: string
+          onboarded_by?: string | null
           phone: string
           photo_url?: string | null
           pin_hash?: string | null
+          preferred_language?: string
           security_deposit_status?: string
           status?: string
           wallet_balance?: number
@@ -659,6 +750,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approved_by?: string | null
           auth_user_id?: string | null
           bank_account_holder_name?: string | null
           bank_account_number?: string | null
@@ -677,15 +769,31 @@ export type Database = {
           level?: string
           location_updated_at?: string | null
           name?: string
+          onboarded_by?: string | null
           phone?: string
           photo_url?: string | null
           pin_hash?: string | null
+          preferred_language?: string
           security_deposit_status?: string
           status?: string
           wallet_balance?: number
           zone_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "experts_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experts_onboarded_by_fkey"
+            columns: ["onboarded_by"]
+            isOneToOne: false
+            referencedRelation: "area_partners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "experts_zone_id_fkey"
             columns: ["zone_id"]
@@ -694,30 +802,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      fcm_tokens: {
-        Row: {
-          created_at: string
-          id: string
-          token: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          token: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          token?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       homepage_sections: {
         Row: {
@@ -799,6 +883,58 @@ export type Database = {
           phone?: string | null
         }
         Relationships: []
+      }
+      partner_skills: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          expert_id: string
+          id: string
+          service_category_id: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          expert_id: string
+          id?: string
+          service_category_id: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          expert_id?: string
+          id?: string
+          service_category_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_skills_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_skills_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_skills_service_category_id_fkey"
+            columns: ["service_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payout_batch_items: {
         Row: {
@@ -983,6 +1119,45 @@ export type Database = {
           },
         ]
       }
+      segments: {
+        Row: {
+          created_at: string
+          display_template: string
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rank: number
+          slug: string
+          updated_at: string
+          vertical_type: string
+        }
+        Insert: {
+          created_at?: string
+          display_template: string
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rank?: number
+          slug: string
+          updated_at?: string
+          vertical_type: string
+        }
+        Update: {
+          created_at?: string
+          display_template?: string
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rank?: number
+          slug?: string
+          updated_at?: string
+          vertical_type?: string
+        }
+        Relationships: []
+      }
       service_catalogue_config: {
         Row: {
           area_partner_payout: number | null
@@ -996,6 +1171,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           price: number
+          service_category_id: string | null
           subtitle: string | null
         }
         Insert: {
@@ -1010,6 +1186,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           price: number
+          service_category_id?: string | null
           subtitle?: string | null
         }
         Update: {
@@ -1024,9 +1201,56 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           price?: number
+          service_category_id?: string | null
           subtitle?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_catalogue_config_service_category_id_fkey"
+            columns: ["service_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_categories: {
+        Row: {
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rank: number
+          segment_id: string
+          slug: string
+        }
+        Insert: {
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rank?: number
+          segment_id: string
+          slug: string
+        }
+        Update: {
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rank?: number
+          segment_id?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_categories_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_users: {
         Row: {
@@ -1060,6 +1284,44 @@ export type Database = {
           zone_id?: string | null
         }
         Relationships: []
+      }
+      store_categories: {
+        Row: {
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rank: number
+          segment_id: string
+          slug: string
+        }
+        Insert: {
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rank?: number
+          segment_id: string
+          slug: string
+        }
+        Update: {
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rank?: number
+          segment_id?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_categories_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_inquiries: {
         Row: {
@@ -1122,6 +1384,7 @@ export type Database = {
           notification_preferences: Json
           phone: string | null
           pin_hash: string | null
+          preferred_language: string
           referral_code: string | null
           referral_count: number | null
           referred_by: string | null
@@ -1138,6 +1401,7 @@ export type Database = {
           notification_preferences?: Json
           phone?: string | null
           pin_hash?: string | null
+          preferred_language?: string
           referral_code?: string | null
           referral_count?: number | null
           referred_by?: string | null
@@ -1154,6 +1418,7 @@ export type Database = {
           notification_preferences?: Json
           phone?: string | null
           pin_hash?: string | null
+          preferred_language?: string
           referral_code?: string | null
           referral_count?: number | null
           referred_by?: string | null
@@ -1242,6 +1507,7 @@ export type Database = {
           deleted_by: string | null
           id: string
           name: string
+          segment_id: string
           status: string
         }
         Insert: {
@@ -1254,6 +1520,7 @@ export type Database = {
           deleted_by?: string | null
           id?: string
           name: string
+          segment_id: string
           status?: string
         }
         Update: {
@@ -1266,6 +1533,7 @@ export type Database = {
           deleted_by?: string | null
           id?: string
           name?: string
+          segment_id?: string
           status?: string
         }
         Relationships: [
@@ -1274,6 +1542,13 @@ export type Database = {
             columns: ["assigned_area_partner_id"]
             isOneToOne: false
             referencedRelation: "area_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zones_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
             referencedColumns: ["id"]
           },
         ]
@@ -1287,6 +1562,10 @@ export type Database = {
         Args: { _booking_id: string; _new_status: string }
         Returns: undefined
       }
+      broadcast_booking_to_experts: {
+        Args: { _booking_id: string; _radius?: number }
+        Returns: number
+      }
       claim_booking_as_expert: {
         Args: { p_booking_id: string }
         Returns: {
@@ -1294,11 +1573,13 @@ export type Database = {
           assigned_expert_id: string | null
           booking_lat: number | null
           booking_lng: number | null
+          broadcast_started_at: string | null
           cancellation_fee: number | null
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
           created_at: string | null
+          current_search_radius_km: number | null
           delete_reason: string | null
           deleted_at: string | null
           deleted_by: string | null
@@ -1314,6 +1595,7 @@ export type Database = {
           review_text: string | null
           scheduled_date: string | null
           scheduled_time_slot: string | null
+          service_category_id: string | null
           service_duration_minutes: number
           service_end_at: string | null
           service_label: string
@@ -1347,6 +1629,7 @@ export type Database = {
         Returns: Json
       }
       ensure_start_otp: { Args: { _booking_id: string }; Returns: string }
+      expand_stale_broadcasts: { Args: never; Returns: number }
       expert_ensure_booking_codes: {
         Args: { _booking_id: string }
         Returns: {
@@ -1475,6 +1758,10 @@ export type Database = {
         Args: { _booking_id: string }
         Returns: undefined
       }
+      staff_acknowledge_emergency_alert: {
+        Args: { _alert_id: string; _notes?: string }
+        Returns: undefined
+      }
       staff_area_partner_kyc_decision: {
         Args: { _decision: string; _partner_id: string; _reason: string }
         Returns: undefined
@@ -1489,6 +1776,14 @@ export type Database = {
       }
       staff_cancel_booking: {
         Args: { _booking_id: string; _reason: string }
+        Returns: undefined
+      }
+      staff_create_service_catalogue_row: {
+        Args: { _payload: Json }
+        Returns: string
+      }
+      staff_delete_service_catalogue_row: {
+        Args: { _id: string }
         Returns: undefined
       }
       staff_edit_booking: {
