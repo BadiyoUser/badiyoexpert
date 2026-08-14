@@ -8,7 +8,7 @@ function normalize(p: string) {
   return p.replace(/\D/g, "").replace(/^0+/, "").slice(-10);
 }
 function expertEmail(digits: string) {
-  return `expert-${digits}@badiyo.internal`;
+  return `expert-${digits}@badiyos.internal`;
 }
 
 Deno.serve(async (req) => {
