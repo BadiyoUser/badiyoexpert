@@ -89,10 +89,17 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as {
       booking_id?: string;
       expert_id?: string;
+      /** "assigned" (manual/direct assignment) or "broadcast" (nearby offer). */
+      alert_type?: "assigned" | "broadcast";
+      title?: string;
+      body?: string;
     };
     if (!body.booking_id || !body.expert_id) {
       return json({ error: "booking_id and expert_id required" }, { status: 400 });
     }
+    const alertType: "assigned" | "broadcast" =
+      body.alert_type === "broadcast" ? "broadcast" : "assigned";
+
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
