@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import badiyoWhite from "@/assets/badiyo-white.png.asset.json";
+import badiyosWhite from "@/assets/badiyos-white.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
@@ -41,8 +41,8 @@ function Splash() {
       style={{ backgroundColor: "#0874FD" }}
     >
       <img
-        src={badiyoWhite.url}
-        alt="Badiyo"
+        src={badiyosWhite.url}
+        alt="badiyos"
         className="w-56 max-w-[70%] animate-pulse"
       />
       <p className="mt-4 text-lg font-semibold tracking-wide text-white/90">

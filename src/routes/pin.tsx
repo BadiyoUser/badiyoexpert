@@ -5,7 +5,7 @@ import { expertApi } from "@/lib/expert-client";
 import { supabase } from "@/integrations/supabase/client";
 import { clearStoredPin } from "@/lib/secure-pin-storage";
 import { registerThisDevice } from "@/lib/devices";
-import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
+import badiyosGreen from "@/assets/badiyos-green.png.asset.json";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 
@@ -115,7 +115,7 @@ function PinScreen() {
     <main className="min-h-[100dvh] w-full bg-background">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] pt-[max(env(safe-area-inset-top),4rem)]">
         <div className="flex justify-center">
-          <img src={badiyoGreen.url} alt="badiyos Expert" className="h-10 w-auto" />
+          <img src={badiyosGreen.url} alt="badiyos Expert" className="h-10 w-auto" />
         </div>
 
         <div className="mt-10 text-center">

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Inbox, MapPin, Loader2, Wallet, History, Award, LifeBuoy, Clock, X, AlertTriangle } from "lucide-react";
-import badiyoGreen from "@/assets/badiyo-green.png.asset.json";
+import badiyosGreen from "@/assets/badiyos-green.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpert, useExpertSession, initials } from "@/lib/expert-client";
 import {
@@ -467,7 +467,7 @@ function HomeDashboard() {
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+6rem)]">
       <header className="flex items-center justify-between px-6 pt-6 pb-4">
-        <img src={badiyoGreen.url} alt="Badiyo" className="h-7 w-auto" />
+        <img src={badiyosGreen.url} alt="badiyos" className="h-7 w-auto" />
         <div className="flex items-center gap-2">
           <Link
             to="/sos"
