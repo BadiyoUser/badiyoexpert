@@ -15,7 +15,7 @@ export const Route = createFileRoute("/pin")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Enter PIN — Badiyo Expert" },
+      { title: "Enter PIN — badiyos Expert" },
       { name: "description", content: "Unlock with your 4-digit PIN." },
     ],
   }),
@@ -115,7 +115,7 @@ function PinScreen() {
     <main className="min-h-[100dvh] w-full bg-background">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] pt-[max(env(safe-area-inset-top),4rem)]">
         <div className="flex justify-center">
-          <img src={badiyoGreen.url} alt="Badiyo Expert" className="h-10 w-auto" />
+          <img src={badiyoGreen.url} alt="badiyos Expert" className="h-10 w-auto" />
         </div>
 
         <div className="mt-10 text-center">

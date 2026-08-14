@@ -13,7 +13,7 @@ export const Route = createFileRoute("/set-pin")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Set your PIN — Badiyo Expert" },
+      { title: "Set your PIN — badiyos Expert" },
       { name: "description", content: "Create a 4-digit PIN to sign in faster next time." },
     ],
   }),
@@ -94,7 +94,7 @@ function SetPinScreen() {
     <main className="min-h-[100dvh] w-full bg-background">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] pt-[max(env(safe-area-inset-top),4rem)]">
         <div className="flex justify-center">
-          <img src={badiyoGreen.url} alt="Badiyo Expert" className="h-10 w-auto" />
+          <img src={badiyoGreen.url} alt="badiyos Expert" className="h-10 w-auto" />
         </div>
 
         <div className="mt-10 text-center">

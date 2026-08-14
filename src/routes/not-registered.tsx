@@ -5,8 +5,8 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/not-registered")({
   head: () => ({
     meta: [
-      { title: "Not registered — Badiyo Expert" },
-      { name: "description", content: "This mobile number isn't registered with Badiyo yet." },
+      { title: "Not registered — badiyos Expert" },
+      { name: "description", content: "This mobile number isn't registered with badiyos yet." },
     ],
   }),
   component: NotRegistered,
@@ -38,7 +38,7 @@ function NotRegistered() {
             <Phone className="h-5 w-5" /> {t("nr.call")}
           </a>
           <a
-            href={`https://wa.me/${support.replace(/[^\d]/g, "")}?text=Hi%20Badiyo%2C%20I%20want%20to%20register%20as%20an%20Expert`}
+            href={`https://wa.me/${support.replace(/[^\d]/g, "")}?text=Hi%20badiyos%2C%20I%20want%20to%20register%20as%20an%20Expert`}
             target="_blank" rel="noreferrer"
             className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground"
           >

@@ -24,7 +24,7 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/home")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Badiyo Expert" },
+      { title: "Dashboard — badiyos Expert" },
       { name: "description", content: "Go online and receive bookings." },
     ],
   }),

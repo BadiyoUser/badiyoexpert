@@ -5,8 +5,8 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/rewards")({
   head: () => ({
     meta: [
-      { title: "Rewards — Badiyo Expert" },
-      { name: "description", content: "Level up and unlock rewards on Badiyo." },
+      { title: "Rewards — badiyos Expert" },
+      { name: "description", content: "Level up and unlock rewards on badiyos." },
     ],
   }),
   component: RewardsScreen,

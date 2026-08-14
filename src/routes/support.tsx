@@ -8,8 +8,8 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Help & Support — Badiyo Expert" },
-      { name: "description", content: "Get help from the Badiyo Support team." },
+      { title: "Help & Support — badiyos Expert" },
+      { name: "description", content: "Get help from the badiyos Support team." },
     ],
   }),
   component: SupportScreen,

@@ -8,8 +8,8 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Badiyo Expert" },
-      { name: "description", content: "Sign in to Badiyo Expert with your registered mobile number." },
+      { title: "Sign in — badiyos Expert" },
+      { name: "description", content: "Sign in to badiyos Expert with your registered mobile number." },
     ],
   }),
   component: LoginScreen,

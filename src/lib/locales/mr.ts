@@ -113,7 +113,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   // ---- Wallet ----
   "wallet.title": "वॉलेट",
   "wallet.balance.label": "वॉलेट शिल्लक",
-  "wallet.balance.note": "बदिओ टीमकडून दर आठवड्याला पेआउट केले जाते.",
+  "wallet.balance.note": "badiyos टीमकडून दर आठवड्याला पेआउट केले जाते.",
   "wallet.tx.title": "अलीकडील व्यवहार",
   "wallet.tx.empty": "अद्याप कोणतेही व्यवहार नाहीत.",
   "wallet.credit": "जमा",
@@ -139,7 +139,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "profile.row.address": "पत्ता",
   "profile.bg.section": "पार्श्वभूमी उपलब्धता",
   "profile.bg.title": "बॅकग्राउंड जॉब अलर्ट सुरू करा",
-  "profile.bg.desc": "अ‍ॅप बंद असतानाही बदिओला तुमचे लोकेशन वापरू द्या, म्हणजे जवळचे काम चुकणार नाही.",
+  "profile.bg.desc": "अ‍ॅप बंद असतानाही badiyos ला तुमचे लोकेशन वापरू द्या, म्हणजे जवळचे काम चुकणार नाही.",
   "profile.bg.granted": "परवानगी दिली",
   "profile.bg.notGranted": "परवानगी नाही",
   "profile.bg.enable": "बॅकग्राउंड अलर्ट सुरू करा",
@@ -158,7 +158,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "sos.sending": "अलर्ट पाठवत आहे…",
   "sos.callDirect": "किंवा थेट सपोर्टला कॉल करा",
   "sos.sent.title": "अलर्ट पाठवला",
-  "sos.sent.sub": "बदिओ सपोर्टला व्हॉट्सअ‍ॅपवर कळवले आहे, ते लवकरच तुमच्याशी संपर्क करतील.",
+  "sos.sent.sub": "badiyos सपोर्टला व्हॉट्सअ‍ॅपवर कळवले आहे, ते लवकरच तुमच्याशी संपर्क करतील.",
   "sos.callSupport": "सपोर्टला कॉल करा",
   "sos.back": "होमवर परत जा",
 
@@ -174,7 +174,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
 
   // ---- Skills ----
   "skills.title": "माझी कौशल्ये",
-  "skills.intro": "बदिओ टीमने मंजूर केलेल्या कौशल्यांचीच कामे तुम्हाला मिळतात.",
+  "skills.intro": "badiyos टीमने मंजूर केलेल्या कौशल्यांचीच कामे तुम्हाला मिळतात.",
   "skills.group.approved": "मंजूर",
   "skills.group.pending": "पुनरावलोकनासाठी प्रलंबित",
   "skills.group.rejected": "नाकारले",
@@ -225,7 +225,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "pin.verifying": "तपासत आहे…",
   "pin.forgot": "पिन विसरलात?",
   "pin.changeNumber": "क्रमांक बदला",
-  "pin.terms": "पुढे जाऊन तुम्ही बदिओच्या अटी व गोपनीयता धोरणास सहमती देता.",
+  "pin.terms": "पुढे जाऊन तुम्ही badiyos च्या अटी व गोपनीयता धोरणास सहमती देता.",
   "pin.lockedIn": "{min} मिनिटांनी पुन्हा प्रयत्न करा ({sec}s)",
   "pin.loginFailed": "लॉगिन अयशस्वी",
   "pin.otpFailed": "OTP पाठवता आला नाही",
@@ -235,7 +235,7 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
   "login.sub": "तुमचा नोंदणीकृत मोबाइल क्रमांक टाका. आम्ही व्हॉट्सअ‍ॅपवर 4 अंकी कोड पाठवू.",
   "login.label": "मोबाइल क्रमांक",
   "login.placeholder": "98765 43210",
-  "login.terms": "फक्त नोंदणीकृत बदिओ एक्सपर्ट साइन इन करू शकतात. पुढे जाऊन तुम्ही बदिओच्या अटी व गोपनीयता धोरणास सहमती देता.",
+  "login.terms": "फक्त नोंदणीकृत badiyos एक्सपर्ट साइन इन करू शकतात. पुढे जाऊन तुम्ही badiyos च्या अटी व गोपनीयता धोरणास सहमती देता.",
   "login.send": "कोड पाठवा",
   "login.sending": "पाठवत आहे…",
   "login.failed": "कोड पाठवता आला नाही",
@@ -252,8 +252,8 @@ export const mr: Partial<Record<keyof typeof en, string>> = {
 
   // ---- Not registered ----
   "nr.title": "अद्याप नोंदणीकृत एक्सपर्ट नाही",
-  "nr.sub": "हा क्रमांक बदिओकडे नोंदवलेला नाही. प्रमाणित एक्सपर्ट होण्यासाठी आमच्या टीमशी संपर्क करा.",
-  "nr.call": "बदिओ टीमला कॉल करा",
+  "nr.sub": "हा क्रमांक badiyos कडे नोंदवलेला नाही. प्रमाणित एक्सपर्ट होण्यासाठी आमच्या टीमशी संपर्क करा.",
+  "nr.call": "badiyos टीमला कॉल करा",
   "nr.whatsapp": "आम्हाला व्हॉट्सअ‍ॅप करा",
 
   // ---- Rewards ----

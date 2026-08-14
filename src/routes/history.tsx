@@ -14,7 +14,7 @@ const STATUS_KEYS = new Set([
 export const Route = createFileRoute("/history")({
   head: () => ({
     meta: [
-      { title: "Booking history — Badiyo Expert" },
+      { title: "Booking history — badiyos Expert" },
       { name: "description", content: "Your past bookings and earnings." },
     ],
   }),
