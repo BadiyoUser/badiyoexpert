@@ -12,6 +12,7 @@ import {
 } from "@/lib/devices";
 import { getDeviceId } from "@/lib/device-id";
 import { supabase } from "@/integrations/supabase/client";
+import { useT } from "@/lib/i18n";
 
 const searchSchema = z.object({ limit: z.union([z.boolean(), z.string()]).optional() });
 
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/devices")({
 });
 
 function DevicesScreen() {
+  const t = useT();
   const { limit } = Route.useSearch();
   const limitMode = limit === true || limit === "1" || limit === "true";
   const navigate = useNavigate();
@@ -40,10 +42,10 @@ function DevicesScreen() {
       setDevices(rows);
       setThisId(id);
     } catch (err) {
-      toast.error((err as Error).message ?? "Could not load devices");
+      toast.error((err as Error).message ?? t("devices.toast.loadFailed"));
       setDevices([]);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -61,7 +63,7 @@ function DevicesScreen() {
       if (limitMode) {
         const res = await registerThisDevice();
         if (res.status === "registered") {
-          toast.success("This device is now active");
+          toast.success(t("devices.toast.nowActive"));
           navigate({ to: "/home" });
           return;
         }
@@ -69,9 +71,9 @@ function DevicesScreen() {
         return;
       }
       await load();
-      toast.success("Device logged out");
+      toast.success(t("devices.toast.loggedOut"));
     } catch (err) {
-      toast.error((err as Error).message ?? "Could not log out device");
+      toast.error((err as Error).message ?? t("devices.toast.logoutFailed"));
     } finally {
       setBusy(null);
     }
@@ -85,20 +87,18 @@ function DevicesScreen() {
             type="button"
             onClick={() => navigate({ to: "/profile" })}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted"
-            aria-label="Back"
+            aria-label={t("common.back")}
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
         )}
         <h1 className="text-[22px] font-bold text-foreground">
-          {limitMode ? "Device limit reached" : "Active devices"}
+          {limitMode ? t("devices.limitTitle") : t("devices.title")}
         </h1>
       </header>
 
       <p className="text-[14px] leading-snug text-[color:var(--text-secondary)]">
-        {limitMode
-          ? "Your account is already signed in on 2 devices. Log out of one to continue on this device."
-          : "You can stay signed in on up to 2 devices."}
+        {limitMode ? t("devices.limitIntro") : t("devices.intro")}
       </p>
 
       <div className="mt-6 space-y-3">
@@ -109,7 +109,7 @@ function DevicesScreen() {
         )}
         {devices?.length === 0 && (
           <p className="py-8 text-center text-[14px] text-[color:var(--text-secondary)]">
-            No active devices.
+            {t("devices.empty")}
           </p>
         )}
         {devices?.map((d) => {
@@ -122,15 +122,15 @@ function DevicesScreen() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-semibold text-foreground">
-                    {d.device_label ?? "Unknown device"}
+                    {d.device_label ?? t("devices.unknown")}
                     {isThis && (
                       <span className="ml-2 rounded-full bg-[color:var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-primary">
-                        This device
+                        {t("devices.thisDevice")}
                       </span>
                     )}
                   </p>
                   <p className="mt-0.5 text-[12px] text-[color:var(--text-secondary)]">
-                    Last active {formatLastActive(d.last_active_at)}
+                    {t("devices.lastActive", { when: formatLastActive(d.last_active_at) })}
                   </p>
                 </div>
               </div>
@@ -145,7 +145,7 @@ function DevicesScreen() {
                 ) : (
                   <LogOut className="h-4 w-4" />
                 )}
-                {isThis ? "Log out this device" : "Log out this device"}
+                {t("devices.logout")}
               </button>
             </div>
           );
@@ -161,7 +161,7 @@ function DevicesScreen() {
           }}
           className="mt-auto pt-8 text-center text-[14px] font-semibold text-[color:var(--text-secondary)]"
         >
-          Cancel and sign in later
+          {t("devices.cancel")}
         </button>
       )}
     </div>
