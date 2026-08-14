@@ -1428,6 +1428,57 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist_requests: {
+        Row: {
+          address_text: string | null
+          city: string | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          segment_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          address_text?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          segment_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          address_text?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          segment_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_requests_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_ledger: {
         Row: {
           amount: number
@@ -1566,6 +1617,10 @@ export type Database = {
         Args: { _booking_id: string; _radius?: number }
         Returns: number
       }
+      check_serviceability: {
+        Args: { _lat: number; _lng: number; _segment_id?: string }
+        Returns: Json
+      }
       claim_booking_as_expert: {
         Args: { p_booking_id: string }
         Returns: {
@@ -1628,6 +1683,16 @@ export type Database = {
         }
         Returns: Json
       }
+      customer_list_devices: { Args: never; Returns: Json }
+      customer_register_device: {
+        Args: { _device_id: string; _device_label?: string }
+        Returns: Json
+      }
+      customer_revoke_device: {
+        Args: { _device_id: string }
+        Returns: undefined
+      }
+      customer_set_language: { Args: { _lang: string }; Returns: undefined }
       ensure_start_otp: { Args: { _booking_id: string }; Returns: string }
       expand_stale_broadcasts: { Args: never; Returns: number }
       expert_ensure_booking_codes: {
