@@ -5,6 +5,7 @@ import { useExpert, useExpertSession } from "@/lib/expert-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/skills")({
   head: () => ({
@@ -56,12 +57,13 @@ function useCategories() {
 }
 
 const GROUPS = [
-  { key: "approved", label: "Approved", Icon: CheckCircle2, cls: "bg-emerald-100 text-emerald-700" },
-  { key: "pending", label: "Pending review", Icon: Clock, cls: "bg-amber-100 text-amber-700" },
-  { key: "rejected", label: "Rejected", Icon: XCircle, cls: "bg-red-100 text-red-700" },
+  { key: "approved", labelKey: "skills.group.approved", badgeKey: "skills.badge.approved", Icon: CheckCircle2, cls: "bg-emerald-100 text-emerald-700" },
+  { key: "pending", labelKey: "skills.group.pending", badgeKey: "skills.badge.pending", Icon: Clock, cls: "bg-amber-100 text-amber-700" },
+  { key: "rejected", labelKey: "skills.group.rejected", badgeKey: "skills.badge.rejected", Icon: XCircle, cls: "bg-red-100 text-red-700" },
 ] as const;
 
 function SkillsScreen() {
+  const t = useT();
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
   const qc = useQueryClient();
@@ -78,11 +80,11 @@ function SkillsScreen() {
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Skill requested — pending review");
+      toast.success(t("skills.toast.requested"));
       setPicking(false);
       await qc.invalidateQueries({ queryKey: ["partner-skills", expert?.id] });
     },
-    onError: (e) => toast.error((e as Error).message ?? "Could not request skill"),
+    onError: (e) => toast.error((e as Error).message ?? t("skills.toast.failed")),
   });
 
   const owned = new Set((skills.data ?? []).map((s) => s.service_category_id));
@@ -102,11 +104,11 @@ function SkillsScreen() {
         <Link to="/profile" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <h1 className="text-[22px] font-bold text-foreground">My Skills</h1>
+        <h1 className="text-[22px] font-bold text-foreground">{t("skills.title")}</h1>
       </header>
 
       <p className="px-6 text-[13px] leading-snug text-[color:var(--text-secondary)]">
-        You only receive jobs for skills that have been approved by the Badiyo team.
+        {t("skills.intro")}
       </p>
 
       <div className="mt-5 flex-1 space-y-6 px-6">
@@ -119,19 +121,19 @@ function SkillsScreen() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
               <Wrench className="h-7 w-7 text-primary" />
             </div>
-            <p className="mt-4 text-[16px] font-bold text-foreground">No skills yet</p>
+            <p className="mt-4 text-[16px] font-bold text-foreground">{t("skills.empty.title")}</p>
             <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">
-              Request a skill below to start receiving jobs.
+              {t("skills.empty.sub")}
             </p>
           </div>
         ) : (
-          GROUPS.map(({ key, label, Icon, cls }) => {
+          GROUPS.map(({ key, labelKey, badgeKey, Icon, cls }) => {
             const rows = (skills.data ?? []).filter((s) => s.status === key);
             if (rows.length === 0) return null;
             return (
               <section key={key}>
                 <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
-                  {label}
+                  {t(labelKey)}
                 </h2>
                 <div className="space-y-2">
                   {rows.map((s) => (
@@ -140,10 +142,10 @@ function SkillsScreen() {
                         <Icon className="h-5 w-5 text-primary" />
                       </div>
                       <p className="flex-1 text-[15px] font-semibold text-foreground">
-                        {s.service_categories?.name ?? "Service"}
+                        {s.service_categories?.name ?? t("skills.fallbackName")}
                       </p>
                       <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${cls}`}>
-                        {label.split(" ")[0].toUpperCase()}
+                        {t(badgeKey)}
                       </span>
                     </div>
                   ))}
@@ -156,11 +158,11 @@ function SkillsScreen() {
         {picking && (
           <section>
             <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
-              Available skills
+              {t("skills.available")}
             </h2>
             {available.length === 0 ? (
               <p className="rounded-[14px] border border-border bg-card p-4 text-[13px] text-[color:var(--text-secondary)]">
-                You've already requested every available skill.
+                {t("skills.allRequested")}
               </p>
             ) : (
               <div className="space-y-2">
@@ -191,7 +193,7 @@ function SkillsScreen() {
           onClick={() => setPicking((v) => !v)}
           className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-white"
         >
-          {picking ? "Close" : (<><Plus className="h-5 w-5" /> Request a new skill</>)}
+          {picking ? t("skills.close") : (<><Plus className="h-5 w-5" /> {t("skills.request")}</>)}
         </button>
       </div>
     </div>

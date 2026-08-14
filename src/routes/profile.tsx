@@ -69,24 +69,24 @@ function ProfileScreen() {
       const status = await checkBackgroundLocation();
       setBgStatus(status);
       if (status.unavailable) {
-        setBgHint("Background alerts are only available in the Android app.");
+        setBgHint(t("profile.bg.hint.unavailable"));
         return;
       }
       if (!status.foreground) {
-        setBgHint("Turn on location from the Home screen first, then try again.");
+        setBgHint(t("profile.bg.hint.foregroundFirst"));
         return;
       }
       if (status.background) return;
       if (status.mustUseSettings) {
-        setBgHint("Opening Settings — tap Permissions › Location › Allow all the time, then return here.");
+        setBgHint(t("profile.bg.hint.openSettings"));
         await openAppLocationSettings();
       } else {
         const res = await requestBackgroundLocation();
         if (!res.granted) {
           setBgHint(
             res.reason === "must_open_settings"
-              ? "Opening Settings — choose Allow all the time."
-              : "Permission not granted. You can enable it anytime from Settings.",
+              ? t("profile.bg.hint.allowAllTime")
+              : t("profile.bg.hint.notGranted"),
           );
           if (res.reason === "must_open_settings") await openAppLocationSettings();
         }
@@ -110,11 +110,11 @@ function ProfileScreen() {
     if (!file || !userId) return;
     setError(null);
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      setError(t("profile.err.imageOnly"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be under 5 MB.");
+      setError(t("profile.err.tooLarge"));
       return;
     }
     setUploading(true);
@@ -129,12 +129,12 @@ function ProfileScreen() {
       const { data: signed, error: sErr } = await supabase.storage
         .from("expert-avatars")
         .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (sErr || !signed?.signedUrl) throw sErr ?? new Error("Could not create URL");
+      if (sErr || !signed?.signedUrl) throw sErr ?? new Error(t("profile.err.urlFailed"));
       const { error: rpcErr } = await supabase.rpc("expert_update_photo_url", { _url: signed.signedUrl });
       if (rpcErr) throw rpcErr;
       await qc.invalidateQueries({ queryKey: ["expert", userId] });
     } catch (err) {
-      setError((err as Error).message ?? "Upload failed");
+      setError((err as Error).message ?? t("profile.err.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -148,7 +148,7 @@ function ProfileScreen() {
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <h1 className="text-[22px] font-bold text-foreground">Profile</h1>
+        <h1 className="text-[22px] font-bold text-foreground">{t("profile.title")}</h1>
       </header>
 
       <section className="flex flex-col items-center px-6 text-center">
@@ -164,7 +164,7 @@ function ProfileScreen() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            aria-label="Change profile photo"
+            aria-label={t("profile.photo.aria")}
             className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-md ring-4 ring-background disabled:opacity-60"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
@@ -183,7 +183,7 @@ function ProfileScreen() {
           disabled={uploading}
           className="mt-3 text-[13px] font-semibold text-primary disabled:opacity-60"
         >
-          {uploading ? "Uploading…" : expert?.photo_url ? "Change photo" : "Upload photo"}
+          {uploading ? t("profile.photo.uploading") : expert?.photo_url ? t("profile.photo.change") : t("profile.photo.upload")}
         </button>
         {error && <p className="mt-1 text-[12px] text-red-600">{error}</p>}
         <h2 className="mt-3 text-[22px] font-bold text-foreground">{expert?.name ?? "—"}</h2>
@@ -196,8 +196,8 @@ function ProfileScreen() {
             <Wrench className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Skills</p>
-            <p className="text-[15px] font-semibold text-foreground">My Skills</p>
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">{t("profile.section.skills")}</p>
+            <p className="text-[15px] font-semibold text-foreground">{t("profile.row.mySkills")}</p>
           </div>
           <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
         </Link>
@@ -206,15 +206,15 @@ function ProfileScreen() {
             <Smartphone className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Security</p>
-            <p className="text-[15px] font-semibold text-foreground">Active devices</p>
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">{t("profile.section.security")}</p>
+            <p className="text-[15px] font-semibold text-foreground">{t("profile.row.devices")}</p>
           </div>
           <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
         </Link>
-        <Row Icon={Award} label="Level" value={(expert?.level ?? "bronze").toString().toUpperCase()} />
-        <Row Icon={ShieldCheck} label="KYC" value={(expert?.kyc_status ?? "pending").toString().toUpperCase()} highlight={expert?.kyc_status === "approved"} />
-        <Row Icon={Phone} label="Phone" value={`+91 ${expert?.phone ?? ""}`} />
-        {expert?.address && <Row Icon={MapPin} label="Address" value={expert.address} />}
+        <Row Icon={Award} label={t("profile.row.level")} value={(expert?.level ?? "bronze").toString().toUpperCase()} />
+        <Row Icon={ShieldCheck} label={t("profile.row.kyc")} value={(expert?.kyc_status ?? "pending").toString().toUpperCase()} highlight={expert?.kyc_status === "approved"} />
+        <Row Icon={Phone} label={t("profile.row.phone")} value={`+91 ${expert?.phone ?? ""}`} />
+        {expert?.address && <Row Icon={MapPin} label={t("profile.row.address")} value={expert.address} />}
       </section>
 
 
@@ -261,7 +261,7 @@ function ProfileScreen() {
       {bgStatus && !bgStatus.unavailable && (
         <section className="mt-6 px-6">
           <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
-            Background availability
+            {t("profile.bg.section")}
           </h3>
           <div className="rounded-[18px] border border-border bg-card p-4">
             <div className="flex items-start gap-3">
@@ -269,9 +269,9 @@ function ProfileScreen() {
                 <Radio className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-[15px] font-semibold text-foreground">Enable background job alerts</p>
+                <p className="text-[15px] font-semibold text-foreground">{t("profile.bg.title")}</p>
                 <p className="mt-1 text-[13px] leading-snug text-[color:var(--text-secondary)]">
-                  Allow Badiyo to access your location even when the app is closed, so you never miss a nearby job.
+                  {t("profile.bg.desc")}
                 </p>
                 <div className="mt-3 flex items-center gap-2">
                   <span
@@ -281,7 +281,7 @@ function ProfileScreen() {
                         : "bg-amber-100 text-amber-700"
                     }`}
                   >
-                    {bgStatus.background ? "Granted" : "Not granted"}
+                    {bgStatus.background ? t("profile.bg.granted") : t("profile.bg.notGranted")}
                   </span>
                 </div>
               </div>
@@ -293,7 +293,7 @@ function ProfileScreen() {
                 disabled={bgBusy}
                 className="mt-4 flex h-[52px] w-full items-center justify-center rounded-[14px] bg-primary text-[16px] font-bold text-white disabled:opacity-60"
               >
-                {bgBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Enable background alerts"}
+                {bgBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : t("profile.bg.enable")}
               </button>
             )}
             {bgStatus.background && (
@@ -302,7 +302,7 @@ function ProfileScreen() {
                 onClick={openAppLocationSettings}
                 className="mt-4 flex h-[44px] w-full items-center justify-center rounded-[14px] border border-border bg-card text-[14px] font-semibold text-foreground"
               >
-                Manage in Settings
+                {t("profile.bg.manage")}
               </button>
             )}
             {bgHint && (
@@ -316,7 +316,7 @@ function ProfileScreen() {
 
       <div className="mt-auto px-6 pt-8">
         <button onClick={logout} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">
-          <LogOut className="h-5 w-5" /> Log out
+          <LogOut className="h-5 w-5" /> {t("profile.logout")}
         </button>
       </div>
     </div>

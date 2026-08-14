@@ -5,6 +5,7 @@ import { z } from "zod";
 import { expertApi } from "@/lib/expert-client";
 import { supabase } from "@/integrations/supabase/client";
 import { registerThisDevice } from "@/lib/devices";
+import { useT } from "@/lib/i18n";
 
 const searchSchema = z.object({ phone: z.string().optional() });
 
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/otp")({
 });
 
 function OtpScreen() {
+  const t = useT();
   const { phone } = Route.useSearch();
   const navigate = useNavigate();
   const [digits, setDigits] = useState<string[]>(["", "", "", ""]);
@@ -70,7 +72,7 @@ function OtpScreen() {
       }
       navigate({ to: "/home" });
     } catch (err) {
-      setError((err as Error).message ?? "Verification failed");
+      setError((err as Error).message ?? t("otp.failed"));
     } finally {
       setLoading(false);
     }
@@ -83,7 +85,7 @@ function OtpScreen() {
       setResendIn(30);
       setError(null);
     } catch (err) {
-      setError((err as Error).message ?? "Failed to resend");
+      setError((err as Error).message ?? t("otp.resendFailed"));
     }
   }
 
@@ -99,14 +101,14 @@ function OtpScreen() {
 
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.5rem)]">
-      <Link to="/login" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted" aria-label="Back">
+      <Link to="/login" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted" aria-label={t("common.back")}>
         <ChevronLeft className="h-6 w-6" />
       </Link>
 
       <div className="mt-6">
-        <h1 className="text-[28px] font-bold leading-tight text-foreground">Enter verification code</h1>
+        <h1 className="text-[28px] font-bold leading-tight text-foreground">{t("otp.title")}</h1>
         <p className="mt-2 text-[15px] text-[color:var(--text-secondary)]">
-          We sent a 4-digit code on WhatsApp to <span className="font-semibold text-foreground">+91 {phone}</span>.
+          {t("otp.sub")} <span className="font-semibold text-foreground">+91 {phone}</span>.
         </p>
       </div>
 
@@ -137,7 +139,7 @@ function OtpScreen() {
           disabled={resendIn > 0}
           className="mt-6 self-start text-[14px] font-semibold text-primary disabled:text-[color:var(--text-secondary)]"
         >
-          {resendIn > 0 ? `Resend code in ${resendIn}s` : "Resend code"}
+          {resendIn > 0 ? t("otp.resendIn", { seconds: resendIn }) : t("otp.resend")}
         </button>
 
         <div className="mt-auto pt-8">
@@ -147,7 +149,7 @@ function OtpScreen() {
             className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
           >
             {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-            {loading ? "Verifying…" : "Verify"}
+            {loading ? t("otp.verifying") : t("otp.verify")}
           </button>
         </div>
       </form>

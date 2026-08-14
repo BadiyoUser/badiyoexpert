@@ -4,6 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpert, useExpertSession, formatINR } from "@/lib/expert-client";
+import { useT } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n";
+
+const STATUS_KEYS = new Set([
+  "completed", "in_progress", "expert_assigned", "accepted", "cancelled", "rejected",
+]);
 
 export const Route = createFileRoute("/history")({
   head: () => ({
@@ -16,6 +22,7 @@ export const Route = createFileRoute("/history")({
 });
 
 function HistoryScreen() {
+  const t = useT();
   const { loading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
 
@@ -77,14 +84,14 @@ function HistoryScreen() {
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <h1 className="text-[22px] font-bold text-foreground">Booking history</h1>
+        <h1 className="text-[22px] font-bold text-foreground">{t("history.title")}</h1>
       </header>
 
       <div className="px-6">
         {items.length === 0 ? (
           <div className="mt-16 text-center">
-            <p className="text-[16px] font-semibold text-foreground">No bookings yet</p>
-            <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">Completed jobs will appear here.</p>
+            <p className="text-[16px] font-semibold text-foreground">{t("history.empty.title")}</p>
+            <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">{t("history.empty.sub")}</p>
           </div>
         ) : (
           <ul className="space-y-3">
@@ -96,11 +103,11 @@ function HistoryScreen() {
                     : b.status === "cancelled" || b.status === "rejected" ? "bg-red-50 text-red-600"
                     : "bg-slate-100 text-slate-600"
                   }`}>
-                    {b.status.replace("_", " ")}
+                    {STATUS_KEYS.has(b.status) ? t(`history.status.${b.status}` as TranslationKey) : b.status.replace("_", " ")}
                   </span>
                   <span className="text-[16px] font-bold text-foreground">{formatINR(b.price)}</span>
                 </div>
-                <p className="mt-2 text-[15px] font-semibold text-foreground">{b.service_duration_minutes}-minute service</p>
+                <p className="mt-2 text-[15px] font-semibold text-foreground">{t("history.service", { minutes: b.service_duration_minutes })}</p>
                 <p className="mt-1 text-[12px] text-[color:var(--text-secondary)]">{b.created_at ? new Date(b.created_at).toLocaleString("en-IN") : ""}</p>
               </li>
             ))}

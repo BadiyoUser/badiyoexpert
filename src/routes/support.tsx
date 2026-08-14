@@ -3,6 +3,7 @@ import { ChevronLeft, Phone, MessageCircle, Loader2, Send } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpertSession } from "@/lib/expert-client";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/support")({
   head: () => ({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/support")({
 });
 
 function SupportScreen() {
+  const t = useT();
   const { loading, userId } = useExpertSession();
   const [message, setMessage] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -38,36 +40,36 @@ function SupportScreen() {
         <Link to="/home" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted">
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <h1 className="text-[22px] font-bold text-foreground">Help & Support</h1>
+        <h1 className="text-[22px] font-bold text-foreground">{t("support.title")}</h1>
       </header>
 
       <section className="grid grid-cols-2 gap-3 px-6">
         <a href={`tel:${support}`} className="flex h-24 flex-col items-center justify-center gap-1 rounded-[18px] border border-border bg-card">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]"><Phone className="h-5 w-5 text-primary" /></div>
-          <span className="text-[13px] font-bold text-foreground">Call us</span>
+          <span className="text-[13px] font-bold text-foreground">{t("support.call")}</span>
         </a>
         <a href={`https://wa.me/${support.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="flex h-24 flex-col items-center justify-center gap-1 rounded-[18px] border border-border bg-card">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]"><MessageCircle className="h-5 w-5 text-primary" /></div>
-          <span className="text-[13px] font-bold text-foreground">WhatsApp</span>
+          <span className="text-[13px] font-bold text-foreground">{t("support.whatsapp")}</span>
         </a>
       </section>
 
       <section className="mt-6 px-6">
-        <h2 className="text-[16px] font-bold text-foreground">Send us a message</h2>
+        <h2 className="text-[16px] font-bold text-foreground">{t("support.form.title")}</h2>
         <form onSubmit={submit} className="mt-3">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Describe your issue..."
+            placeholder={t("support.placeholder")}
             rows={5}
             className="w-full rounded-[14px] border border-border bg-card p-4 text-[15px] text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
           {err && <p className="mt-2 text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
-          {state === "sent" && <p className="mt-2 text-[13px] font-semibold text-primary">Thanks — our team will get back shortly.</p>}
+          {state === "sent" && <p className="mt-2 text-[13px] font-semibold text-primary">{t("support.sent")}</p>}
           <button type="submit" disabled={!message.trim() || state === "sending"}
             className="mt-3 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-40">
             {state === "sending" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-            {state === "sending" ? "Sending…" : "Submit ticket"}
+            {state === "sending" ? t("support.sending") : t("support.submit")}
           </button>
         </form>
       </section>
