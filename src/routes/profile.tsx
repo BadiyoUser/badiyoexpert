@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera, Radio, Wrench, Smartphone } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera, Radio, Wrench, Smartphone, Languages, Check } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import {
   openAppLocationSettings,
   type BgLocationStatus,
 } from "@/lib/background-location";
+import { useLanguage, type Lang } from "@/lib/i18n";
 
 
 export const Route = createFileRoute("/profile")({
@@ -33,6 +34,22 @@ function ProfileScreen() {
   const [bgStatus, setBgStatus] = useState<BgLocationStatus | null>(null);
   const [bgBusy, setBgBusy] = useState(false);
   const [bgHint, setBgHint] = useState<string | null>(null);
+  const { lang, setLang, t } = useLanguage();
+  const [langBusy, setLangBusy] = useState<Lang | null>(null);
+  const [langError, setLangError] = useState<string | null>(null);
+
+  async function chooseLanguage(next: Lang) {
+    if (next === lang || langBusy) return;
+    setLangError(null);
+    setLangBusy(next);
+    try {
+      await setLang(next);
+    } catch {
+      setLangError(t("lang.saveFailed"));
+    } finally {
+      setLangBusy(null);
+    }
+  }
 
   const refreshBg = useCallback(async () => {
     setBgStatus(await checkBackgroundLocation());
@@ -200,6 +217,46 @@ function ProfileScreen() {
         {expert?.address && <Row Icon={MapPin} label="Address" value={expert.address} />}
       </section>
 
+
+      <section className="mt-6 px-6">
+        <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
+          {t("lang.section")}
+        </h3>
+        <div className="rounded-[18px] border border-border bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
+              <Languages className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-[15px] font-semibold text-foreground">{t("lang.title")}</p>
+          </div>
+          <div className="mt-3 space-y-2">
+            {([
+              { code: "en" as const, label: t("lang.english") },
+              { code: "mr" as const, label: t("lang.marathi") },
+            ]).map(({ code, label }) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => chooseLanguage(code)}
+                disabled={langBusy !== null}
+                className={`flex h-[52px] w-full items-center justify-between rounded-[14px] border px-4 text-[15px] font-semibold disabled:opacity-60 ${
+                  lang === code
+                    ? "border-primary bg-[color:var(--color-accent)] text-primary"
+                    : "border-border bg-card text-foreground"
+                }`}
+              >
+                <span>{label}</span>
+                {langBusy === code ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                ) : lang === code ? (
+                  <Check className="h-5 w-5 text-primary" />
+                ) : null}
+              </button>
+            ))}
+          </div>
+          {langError && <p className="mt-2 text-[12px] text-red-600">{langError}</p>}
+        </div>
+      </section>
 
       {bgStatus && !bgStatus.unavailable && (
         <section className="mt-6 px-6">
