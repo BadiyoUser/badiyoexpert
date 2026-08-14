@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useExpert, useExpertSession } from "@/lib/expert-client";
 import { useState, useRef, useEffect } from "react";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/booking/$id")({
   head: () => ({
@@ -41,6 +42,7 @@ function BookingScreen() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const t = useT();
   const { loading: sessionLoading, userId } = useExpertSession();
   const { data: expert } = useExpert(userId);
 
@@ -121,9 +123,9 @@ function BookingScreen() {
   if (!booking || !isMine) {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-[22px] font-bold text-foreground">Booking not found</h1>
-        <p className="mt-2 text-[14px] text-[color:var(--text-secondary)]">This booking isn't assigned to you.</p>
-        <Link to="/home" className="mt-6 h-[52px] w-full max-w-xs flex items-center justify-center rounded-[14px] bg-primary font-bold text-primary-foreground">Back to home</Link>
+        <h1 className="text-[22px] font-bold text-foreground">{t("job.notFound.title")}</h1>
+        <p className="mt-2 text-[14px] text-[color:var(--text-secondary)]">{t("job.notFound.sub")}</p>
+        <Link to="/home" className="mt-6 h-[52px] w-full max-w-xs flex items-center justify-center rounded-[14px] bg-primary font-bold text-primary-foreground">{t("job.notFound.back")}</Link>
       </div>
     );
   }
@@ -143,9 +145,9 @@ function BookingScreen() {
 
       <div className="px-6">
         <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-          {booking.status === "in_progress" ? "In progress" : booking.status === "completed" ? "Completed" : "New booking"}
+          {booking.status === "in_progress" ? t("job.badge.inProgress") : booking.status === "completed" ? t("job.badge.completed") : t("job.badge.new")}
         </span>
-        <h1 className="mt-2 text-[26px] font-bold leading-tight text-foreground">{booking.service_duration_minutes}-minute service</h1>
+        <h1 className="mt-2 text-[26px] font-bold leading-tight text-foreground">{t("job.title", { minutes: booking.service_duration_minutes })}</h1>
       </div>
 
       <section className="mt-5 px-6">
@@ -155,9 +157,9 @@ function BookingScreen() {
               <MapPin className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Customer address</p>
+              <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">{t("job.address.label")}</p>
               <p className="mt-1 text-[15px] font-semibold text-foreground">
-                {addressQ.isLoading ? "Loading…" : (addressQ.data?.full_address ?? "Address unavailable")}
+                {addressQ.isLoading ? t("job.address.loading") : (addressQ.data?.full_address ?? t("job.address.unavailable"))}
               </p>
               {(addressQ.data?.area || addressQ.data?.city) && (
                 <p className="mt-1 text-[13px] text-[color:var(--text-secondary)]">
@@ -179,12 +181,12 @@ function BookingScreen() {
                   target="_blank" rel="noreferrer"
                   className="flex h-11 items-center justify-center gap-1 rounded-[14px] bg-primary text-[14px] font-bold text-primary-foreground"
                 >
-                  <Navigation2 className="h-4 w-4" /> Navigate
+                  <Navigation2 className="h-4 w-4" /> {t("job.navigate")}
                 </a>
               )}
               {customerQ.data?.phone && (
                 <a href={`tel:${customerQ.data.phone}`} className="flex h-11 items-center justify-center gap-1 rounded-[14px] border border-border bg-card text-[14px] font-bold text-foreground">
-                  <Phone className="h-4 w-4" /> Call
+                  <Phone className="h-4 w-4" /> {t("job.call")}
                 </a>
               )}
             </div>
@@ -209,6 +211,7 @@ function BookingScreen() {
 function AssignedControls({
   bookingId, onEnsureCodes, onReject, rejecting,
 }: { bookingId: string; onEnsureCodes: () => Promise<unknown>; onReject: (r: string) => void; rejecting: boolean }) {
+  const t = useT();
   const [step, setStep] = useState<"start" | "otp">("start");
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason] = useState("");
@@ -228,7 +231,7 @@ function AssignedControls({
       setStep("otp");
     } catch (e) {
       console.error("ensureCodes failed", e);
-      setErr("Something went wrong, please try again.");
+      setErr(t("job.error.generic"));
     } finally {
       setPreparing(false);
     }
@@ -254,24 +257,30 @@ function AssignedControls({
             disabled={preparing}
             className="h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-60"
           >
-            {preparing ? "Preparing…" : "Start service"}
+            {preparing ? t("job.preparing") : t("job.start")}
           </button>
-          <button onClick={() => setShowReject(true)} className="mt-3 h-[52px] w-full rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">Reject</button>
+          <button onClick={() => setShowReject(true)} className="mt-3 h-[52px] w-full rounded-[14px] border border-border bg-card text-[16px] font-bold text-foreground">{t("job.reject")}</button>
           {err && <p className="mt-3 text-center text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
         </div>
         {showReject && (
           <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => setShowReject(false)}>
             <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-[24px] bg-card p-6 pb-8">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-[18px] font-bold text-foreground">Reject booking</h3>
+                <h3 className="text-[18px] font-bold text-foreground">{t("job.reject.title")}</h3>
                 <button onClick={() => setShowReject(false)}><X className="h-5 w-5" /></button>
               </div>
-              <p className="text-[13px] text-[color:var(--text-secondary)]">This booking will be sent back for reassignment.</p>
+              <p className="text-[13px] text-[color:var(--text-secondary)]">{t("job.reject.sub")}</p>
               <div className="mt-4 space-y-2">
-                {["Too far", "Health issue", "Personal emergency", "Wrong service", "Other"].map((r) => (
+                {([
+                  ["Too far", "job.reject.reason.tooFar"],
+                  ["Health issue", "job.reject.reason.health"],
+                  ["Personal emergency", "job.reject.reason.emergency"],
+                  ["Wrong service", "job.reject.reason.wrongService"],
+                  ["Other", "job.reject.reason.other"],
+                ] as const).map(([r, key]) => (
                   <button key={r} onClick={() => setReason(r)}
                     className={`w-full rounded-[14px] border p-4 text-left text-[14px] font-semibold ${reason === r ? "border-primary bg-[color:var(--color-accent)] text-primary" : "border-border bg-card text-foreground"}`}>
-                    {r}
+                    {t(key)}
                   </button>
                 ))}
               </div>
@@ -280,7 +289,7 @@ function AssignedControls({
                 onClick={() => { onReject(reason); navigate({ to: "/home" }); }}
                 className="mt-6 h-[52px] w-full rounded-[14px] bg-[color:var(--color-destructive)] text-[16px] font-bold text-white disabled:opacity-40"
               >
-                {rejecting ? "Rejecting…" : "Confirm reject"}
+                {rejecting ? t("job.reject.rejecting") : t("job.reject.confirm")}
               </button>
             </div>
           </div>
@@ -292,8 +301,8 @@ function AssignedControls({
   // Start-OTP step
   return (
     <form onSubmit={verifyStart} className="mt-auto px-6 pt-6">
-      <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Enter start code</p>
-      <h3 className="mt-1 text-[22px] font-bold text-foreground">Ask the customer for the 4-digit code</h3>
+      <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">{t("job.startCode.label")}</p>
+      <h3 className="mt-1 text-[22px] font-bold text-foreground">{t("job.startCode.title")}</h3>
       <div className="mt-6 grid grid-cols-4 gap-3">
         {otp.map((d, i) => (
           <input key={i} ref={(el) => { inputs.current[i] = el; }} type="tel" inputMode="numeric" maxLength={1}
@@ -311,7 +320,7 @@ function AssignedControls({
       {err && <p className="mt-3 text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
       <button type="submit" disabled={starting || otp.join("").length !== 4}
         className="mt-6 h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-40">
-        {starting ? "Starting…" : "Start service"}
+        {starting ? t("job.starting") : t("job.start")}
       </button>
     </form>
   );
@@ -319,6 +328,7 @@ function AssignedControls({
 
 function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: string }) {
   const qc = useQueryClient();
+  const t = useT();
   const [otp, setOtp] = useState(["", "", "", ""]);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -350,15 +360,15 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
   return (
     <section className="mt-5 px-6">
       <div className="rounded-[18px] border-2 border-primary bg-[color:var(--color-accent)] p-5 text-center">
-        <p className="text-[12px] font-bold uppercase tracking-wider text-primary">Time remaining</p>
+        <p className="text-[12px] font-bold uppercase tracking-wider text-primary">{t("job.timeRemaining")}</p>
         <p className="mt-1 font-mono text-[44px] font-bold leading-none text-primary">
           {timeText}
         </p>
       </div>
 
       <form onSubmit={verifyEnd} className="mt-6">
-        <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Enter end code</p>
-        <h3 className="mt-1 text-[20px] font-bold text-foreground">Ask the customer for the completion code</h3>
+        <p className="text-[13px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">{t("job.endCode.label")}</p>
+        <h3 className="mt-1 text-[20px] font-bold text-foreground">{t("job.endCode.title")}</h3>
         <div className="mt-4 grid grid-cols-4 gap-3">
           {otp.map((d, i) => (
             <input key={i} ref={(el) => { inputs.current[i] = el; }} type="tel" inputMode="numeric" maxLength={1}
@@ -376,7 +386,7 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
         {err && <p className="mt-3 text-[13px] font-semibold text-[color:var(--color-destructive)]">{err}</p>}
         <button type="submit" disabled={ending || otp.join("").length !== 4}
           className="mt-6 h-[52px] w-full rounded-[14px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[var(--shadow-brand-sm)] disabled:opacity-40">
-          {ending ? "Completing…" : "Complete service"}
+          {ending ? t("job.completing") : t("job.complete")}
         </button>
       </form>
     </section>
@@ -384,16 +394,17 @@ function InProgressPanel({ booking, bookingId }: { booking: Booking; bookingId: 
 }
 
 function CompletedPanel() {
+  const t = useT();
   return (
     <section className="mt-6 flex flex-1 flex-col items-center justify-center px-6 text-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white text-3xl">✓</div>
       </div>
-      <h2 className="mt-5 text-[24px] font-bold text-foreground">Service completed</h2>
-      <p className="mt-2 max-w-xs text-[14px] text-[color:var(--text-secondary)]">Your payout has been credited to your wallet.</p>
+      <h2 className="mt-5 text-[24px] font-bold text-foreground">{t("job.done.title")}</h2>
+      <p className="mt-2 max-w-xs text-[14px] text-[color:var(--text-secondary)]">{t("job.done.sub")}</p>
       <div className="mt-8 flex w-full gap-3">
-        <Link to="/wallet" className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] border border-border bg-card font-bold text-foreground">View wallet</Link>
-        <Link to="/home" className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-primary font-bold text-primary-foreground">Home</Link>
+        <Link to="/wallet" className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] border border-border bg-card font-bold text-foreground">{t("job.done.wallet")}</Link>
+        <Link to="/home" className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-primary font-bold text-primary-foreground">{t("job.done.home")}</Link>
       </div>
     </section>
   );

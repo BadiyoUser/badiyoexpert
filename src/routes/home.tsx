@@ -19,6 +19,7 @@ import { initExpertPush } from "@/lib/push";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -54,6 +55,7 @@ function HomeDashboard() {
   const { data: expert } = useExpert(userId);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const t = useT();
 
   useEffect(() => {
     if (!userId) return;
@@ -408,11 +410,11 @@ function HomeDashboard() {
     onError: (err: Error) => {
       const msg = err.message || "";
       if (/permission/i.test(msg) || /denied/i.test(msg)) {
-        toast.error("Couldn't get your location — check permissions and try again.");
+        toast.error(t("home.toast.locationPermission"));
       } else if (/timed out/i.test(msg) || /timeout/i.test(msg)) {
-        toast.error("Couldn't get your location — move to an open area and try again.");
+        toast.error(t("home.toast.locationTimeout"));
       } else {
-        toast.error(msg || "Could not update your status.");
+        toast.error(msg || t("home.toast.statusFailed"));
       }
     },
   });
@@ -431,7 +433,7 @@ function HomeDashboard() {
       return bookingId;
     },
     onSuccess: (bookingId) => {
-      toast.success("Booking accepted");
+      toast.success(t("home.toast.accepted"));
       removeCandidate(bookingId);
       qc.invalidateQueries({ queryKey: ["assigned-booking", expert?.id] });
       qc.invalidateQueries({ queryKey: ["expert", userId] });
@@ -441,11 +443,11 @@ function HomeDashboard() {
       const msg = err?.message || String(err) || "";
       console.warn("[broadcast][accept] failed", { bookingId, msg, err });
       if (/already been accepted|already accepted|not found|no booking/i.test(msg)) {
-        toast.info("This booking was already accepted by another expert.");
+        toast.info(t("home.toast.takenByOther"));
         removeCandidate(bookingId);
         return;
       }
-      toast.error(msg || "Could not accept this booking — please try again.");
+      toast.error(msg || t("home.toast.acceptFailed"));
     },
     onSettled: (data, error, bookingId) => {
       // Safety net: if neither onSuccess nor onError produced a visible toast
@@ -453,7 +455,7 @@ function HomeDashboard() {
       // surface *something* so Accept can never fail completely silently.
       if (!data && !error) {
         console.warn("[broadcast][accept] settled with neither data nor error", { bookingId });
-        toast.error("Something went wrong — please try again.");
+        toast.error(t("home.toast.generic"));
       }
     },
   });
@@ -472,12 +474,12 @@ function HomeDashboard() {
         <div className="flex items-center gap-2">
           <Link
             to="/sos"
-            aria-label="Emergency SOS"
+            aria-label={t("aria.sos")}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-destructive)]/10 text-[color:var(--color-destructive)] active:scale-95 transition"
           >
             <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={2.4} />
           </Link>
-          <Link to="/profile" className="rounded-full" aria-label="Profile">
+          <Link to="/profile" className="rounded-full" aria-label={t("aria.profile")}>
             {expert?.photo_url ? (
               <img src={expert.photo_url} alt={expert.name ?? "Expert"} className="h-9 w-9 rounded-full object-cover border border-border" />
             ) : (
@@ -503,21 +505,21 @@ function HomeDashboard() {
               online ? "text-primary-foreground/85" : "text-muted-foreground"
             }`}
           >
-            Status
+            {t("home.status")}
           </p>
           <p
             className={`mt-1 text-[26px] font-bold leading-tight ${
               online ? "text-primary-foreground" : "text-foreground"
             }`}
           >
-            {online ? "You're online" : "You're offline"}
+            {online ? t("home.online") : t("home.offline")}
           </p>
           <p
             className={`mt-1 text-[14px] ${
               online ? "text-primary-foreground/85" : "text-muted-foreground"
             }`}
           >
-            {online ? "Ready to receive bookings" : "Go online to start receiving bookings"}
+            {online ? t("home.online.sub") : t("home.offline.sub")}
           </p>
 
           <button
@@ -535,7 +537,7 @@ function HomeDashboard() {
                 online ? "text-primary-foreground" : "text-foreground"
               }`}
             >
-              {toggle.isPending ? "Updating…" : online ? "Tap to go offline" : "Tap to go online"}
+              {toggle.isPending ? t("home.toggle.updating") : online ? t("home.toggle.goOffline") : t("home.toggle.goOnline")}
             </span>
             <span
               className={`relative flex h-10 w-[72px] items-center rounded-full transition ${
@@ -573,14 +575,14 @@ function HomeDashboard() {
               }`}
             >
               {locationFresh
-                ? "Location active — you'll receive nearby job requests."
+                ? t("home.location.active")
                 : locationState.status === "denied"
-                  ? "Location permission denied. Enable location access in your browser settings — you won't receive job requests until this is resolved."
+                  ? t("home.location.denied")
                   : locationState.status === "unavailable"
-                    ? `${locationState.message} — you won't receive job requests until this is resolved.`
+                    ? t("home.location.unavailableWith", { message: locationState.message ?? "" })
                     : locationState.status === "requesting"
-                      ? "Getting your location…"
-                      : "Location unavailable — you won't receive job requests until this is resolved."}
+                      ? t("home.location.requesting")
+                      : t("home.location.unavailable")}
             </p>
           </div>
         )}
@@ -598,8 +600,8 @@ function HomeDashboard() {
               <AlertTriangle className="h-5 w-5 text-amber-700" />
             </div>
             <div className="flex-1">
-              <p className="text-[15px] font-bold text-amber-900">Complete your skill setup to start receiving jobs</p>
-              <p className="mt-0.5 text-[13px] text-amber-800">Tap to request approval for a service category.</p>
+              <p className="text-[15px] font-bold text-amber-900">{t("home.skills.title")}</p>
+              <p className="mt-0.5 text-[13px] text-amber-800">{t("home.skills.sub")}</p>
             </div>
           </Link>
         </section>
@@ -614,12 +616,12 @@ function HomeDashboard() {
           >
             <div className="flex items-center justify-between">
               <span className="rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-                {assigned.status === "in_progress" ? "In progress" : "New booking"}
+                {assigned.status === "in_progress" ? t("home.badge.inProgress") : t("home.badge.newBooking")}
               </span>
             </div>
-            <p className="mt-3 text-[18px] font-bold text-foreground">{assigned.service_duration_minutes}-min service</p>
+            <p className="mt-3 text-[18px] font-bold text-foreground">{t("home.card.service", { minutes: assigned.service_duration_minutes ?? "—" })}</p>
             <div className="mt-2 flex items-center gap-1 text-[13px] font-semibold text-[color:var(--text-secondary)]">
-              <MapPin className="h-4 w-4" /> Tap to view details
+              <MapPin className="h-4 w-4" /> {t("home.card.tapDetails")}
             </div>
           </button>
         </section>
@@ -629,22 +631,22 @@ function HomeDashboard() {
             <Inbox className="h-9 w-9 text-primary" strokeWidth={2} />
           </div>
           <h2 className="mt-5 text-[20px] font-bold text-foreground">
-            {isBusy ? "Active booking in progress" : "Waiting for a booking"}
+            {isBusy ? t("home.empty.busy.title") : t("home.empty.waiting.title")}
           </h2>
           <p className="mt-2 max-w-xs text-[14px] text-[color:var(--text-secondary)]">
             {isBusy
-              ? "New requests are paused until your current booking is complete."
-              : online ? "New requests from nearby customers will appear here." : "Turn on your availability to start getting requests."}
+              ? t("home.empty.busy.sub")
+              : online ? t("home.empty.online.sub") : t("home.empty.offline.sub")}
           </p>
         </section>
       )}
 
       <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto grid w-full max-w-md grid-cols-4 gap-2 border-t border-border bg-background px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
         {[
-          { to: "/history" as const, label: "History", Icon: History },
-          { to: "/wallet" as const, label: "Wallet", Icon: Wallet },
-          { to: "/rewards" as const, label: "Rewards", Icon: Award },
-          { to: "/support" as const, label: "Help", Icon: LifeBuoy },
+          { to: "/history" as const, label: t("home.nav.history"), Icon: History },
+          { to: "/wallet" as const, label: t("home.nav.wallet"), Icon: Wallet },
+          { to: "/rewards" as const, label: t("home.nav.rewards"), Icon: Award },
+          { to: "/support" as const, label: t("home.nav.help"), Icon: LifeBuoy },
         ].map(({ to, label, Icon }) => (
           <Link key={to} to={to} className="flex flex-col items-center gap-1 rounded-[14px] border border-border bg-card py-3 text-center">
             <Icon className="h-5 w-5 text-primary" strokeWidth={2} />
@@ -665,7 +667,7 @@ function HomeDashboard() {
               >
                 <div className="flex items-start justify-between">
                   <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-                    New booking request
+                    {t("home.broadcast.badge")}
                   </span>
                   <button
                     type="button"
@@ -678,20 +680,20 @@ function HomeDashboard() {
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-[15px] font-bold text-foreground">
                   <Clock className="h-4 w-4 text-primary" />
-                  {c.booking.service_duration_minutes ?? "—"}-min service
+                  {t("home.card.service", { minutes: c.booking.service_duration_minutes ?? "—" })}
                   {c.booking.scheduled_time_slot ? ` · ${c.booking.scheduled_time_slot}` : ""}
                 </div>
                 <div className="mt-3 flex items-start gap-2 rounded-[14px] bg-[color:var(--divider)] p-3">
                   <MapPin className="mt-0.5 h-4 w-4 text-primary" />
                   <div className="text-[13px] leading-snug text-foreground">
-                    <p className="font-semibold">{c.address?.full_address ?? "Customer address"}</p>
+                    <p className="font-semibold">{c.address?.full_address ?? t("home.broadcast.address")}</p>
                     {(c.address?.area || c.address?.city) && (
                       <p className="text-[color:var(--text-secondary)]">
                         {[c.address?.area, c.address?.city].filter(Boolean).join(", ")}
                       </p>
                     )}
                     <p className="mt-1 text-[12px] font-semibold text-[color:var(--text-secondary)]">
-                      {c.distanceKm < 0.1 ? "Nearby" : `${c.distanceKm.toFixed(2)} km away`}
+                      {c.distanceKm < 0.1 ? t("home.broadcast.nearby") : t("home.broadcast.kmAway", { km: c.distanceKm.toFixed(2) })}
                     </p>
 
                   </div>
@@ -702,7 +704,7 @@ function HomeDashboard() {
                     onClick={() => dismissCandidate(c.booking.id)}
                     className="h-[52px] flex-1 rounded-[14px] border border-border bg-card text-[15px] font-bold text-foreground"
                   >
-                    Dismiss
+                    {t("home.broadcast.dismiss")}
                   </button>
                   <button
                     type="button"
@@ -710,7 +712,7 @@ function HomeDashboard() {
                     onClick={() => acceptBroadcast.mutate(c.booking.id)}
                     className="h-[52px] flex-[1.4] rounded-[14px] bg-primary text-[15px] font-bold text-white disabled:opacity-60"
                   >
-                    {acceptBroadcast.isPending && acceptBroadcast.variables === c.booking.id ? "Accepting…" : "Accept"}
+                    {acceptBroadcast.isPending && acceptBroadcast.variables === c.booking.id ? t("home.broadcast.accepting") : t("home.broadcast.accept")}
                   </button>
                 </div>
               </div>

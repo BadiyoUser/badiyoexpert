@@ -1650,6 +1650,7 @@ export type Database = {
         Returns: string
       }
       expert_revoke_device: { Args: { _device_id: string }; Returns: undefined }
+      expert_set_language: { Args: { _lang: string }; Returns: undefined }
       expert_set_online: { Args: { _online: boolean }; Returns: undefined }
       expert_update_location: {
         Args: { p_lat: number; p_lng: number }
