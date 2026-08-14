@@ -6,7 +6,9 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.webkit.GeolocationPermissions;
 
 import com.getcapacitor.BridgeActivity;
@@ -27,6 +29,20 @@ public class MainActivity extends BridgeActivity {
 
     private static final String NEW_BOOKING_CHANNEL_ID = "new_booking_alerts";
 
+    /** Extra used by the full-screen booking alert to deep-link after Accept. */
+    public static final String EXTRA_ROUTE = "badiyo_route";
+
+    /**
+     * Tracks whether the webview UI is currently visible. BadiyoMessagingService
+     * uses this to decide between the in-app alert (foreground) and the
+     * full-screen ringing notification (background / locked).
+     */
+    private static volatile boolean appInForeground = false;
+
+    public static boolean isAppInForeground() {
+        return appInForeground;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         // Register custom plugins BEFORE super.onCreate so Capacitor picks them up.
@@ -46,6 +62,43 @@ public class MainActivity extends BridgeActivity {
         });
 
         createNewBookingNotificationChannel();
+        handleRouteExtra(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleRouteExtra(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        appInForeground = true;
+    }
+
+    @Override
+    protected void onPause() {
+        appInForeground = false;
+        super.onPause();
+    }
+
+    /**
+     * When launched from the full-screen booking alert we carry the target
+     * in-app route; navigate the webview there once the bridge is ready.
+     */
+    private void handleRouteExtra(Intent intent) {
+        if (intent == null) return;
+        final String route = intent.getStringExtra(EXTRA_ROUTE);
+        if (TextUtils.isEmpty(route)) return;
+        intent.removeExtra(EXTRA_ROUTE);
+        if (this.bridge == null || this.bridge.getWebView() == null) return;
+        this.bridge.getWebView().post(() ->
+            this.bridge.getWebView().evaluateJavascript(
+                "window.location.replace('" + route.replace("'", "") + "');", null
+            )
+        );
     }
 
     private void createNewBookingNotificationChannel() {
