@@ -1637,6 +1637,10 @@ export type Database = {
           start_otp: string
         }[]
       }
+      expert_register_device: {
+        Args: { _device_id: string; _device_label?: string }
+        Returns: Json
+      }
       expert_reject_booking: {
         Args: { _booking_id: string; _reason: string }
         Returns: undefined
@@ -1645,6 +1649,7 @@ export type Database = {
         Args: { _service_category_id: string }
         Returns: string
       }
+      expert_revoke_device: { Args: { _device_id: string }; Returns: undefined }
       expert_set_online: { Args: { _online: boolean }; Returns: undefined }
       expert_update_location: {
         Args: { p_lat: number; p_lng: number }

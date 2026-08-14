@@ -4,6 +4,7 @@ import { ChevronLeft, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { expertApi } from "@/lib/expert-client";
 import { supabase } from "@/integrations/supabase/client";
+import { registerThisDevice } from "@/lib/devices";
 
 const searchSchema = z.object({ phone: z.string().optional() });
 
@@ -61,6 +62,11 @@ function OtpScreen() {
           navigate({ to: "/set-pin", search: { phone } });
           return;
         }
+      }
+      const reg = await registerThisDevice().catch(() => ({ status: "registered" as const }));
+      if (reg.status === "limit_reached") {
+        navigate({ to: "/devices", search: { limit: "1" } });
+        return;
       }
       navigate({ to: "/home" });
     } catch (err) {

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera, Radio, Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Phone, MapPin, Award, ShieldCheck, Loader2, Camera, Radio, Wrench, Smartphone } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -181,6 +181,16 @@ function ProfileScreen() {
           <div className="flex-1">
             <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Skills</p>
             <p className="text-[15px] font-semibold text-foreground">My Skills</p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
+        </Link>
+        <Link to="/devices" search={{}} className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)]">
+            <Smartphone className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">Security</p>
+            <p className="text-[15px] font-semibold text-foreground">Active devices</p>
           </div>
           <ChevronRight className="h-5 w-5 text-[color:var(--text-secondary)]" />
         </Link>
