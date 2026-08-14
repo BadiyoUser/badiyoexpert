@@ -62,7 +62,22 @@ function HomeDashboard() {
 
   const online = !!expert?.is_online;
   const isBusy = !!expert?.is_busy;
+  const approvedSkills = useQuery({
+    queryKey: ["approved-skills-count", expert?.id],
+    enabled: !!expert?.id,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("partner_skills")
+        .select("id", { count: "exact", head: true })
+        .eq("expert_id", expert!.id)
+        .eq("status", "approved");
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  const needsSkillSetup = approvedSkills.data === 0;
   const tracker = useExpertLocationTracking(online);
+
   const locationState = tracker.state;
   const coordsRef = useRef<Coords | null>(null);
   useEffect(() => {
@@ -573,7 +588,25 @@ function HomeDashboard() {
 
       </section>
 
+      {needsSkillSetup && (
+        <section className="mt-4 px-6">
+          <Link
+            to="/skills"
+            className="flex items-center gap-3 rounded-[18px] border border-amber-200 bg-amber-50 p-4"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+              <AlertTriangle className="h-5 w-5 text-amber-700" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[15px] font-bold text-amber-900">Complete your skill setup to start receiving jobs</p>
+              <p className="mt-0.5 text-[13px] text-amber-800">Tap to request approval for a service category.</p>
+            </div>
+          </Link>
+        </section>
+      )}
+
       {assigned ? (
+
         <section className="mt-6 px-6">
           <button
             onClick={() => navigate({ to: "/booking/$id", params: { id: assigned.id } })}
