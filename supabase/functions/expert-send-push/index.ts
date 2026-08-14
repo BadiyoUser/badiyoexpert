@@ -89,10 +89,17 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as {
       booking_id?: string;
       expert_id?: string;
+      /** "assigned" (manual/direct assignment) or "broadcast" (nearby offer). */
+      alert_type?: "assigned" | "broadcast";
+      title?: string;
+      body?: string;
     };
     if (!body.booking_id || !body.expert_id) {
       return json({ error: "booking_id and expert_id required" }, { status: 400 });
     }
+    const alertType: "assigned" | "broadcast" =
+      body.alert_type === "broadcast" ? "broadcast" : "assigned";
+
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -139,28 +146,54 @@ Deno.serve(async (req) => {
 
     const { data: booking } = await admin
       .from("bookings")
-      .select("id, scheduled_time_slot, service_duration_minutes, address_id")
+      .select(
+        "id, scheduled_time_slot, service_duration_minutes, address_id, booking_lat, booking_lng",
+      )
       .eq("id", body.booking_id)
       .maybeSingle();
 
     let area = "";
+    let fullAddress = "";
     if (booking?.address_id) {
       const { data: addr } = await admin
         .from("addresses")
-        .select("area, city")
+        .select("full_address, area, city")
         .eq("id", booking.address_id)
         .maybeSingle();
       area = [addr?.area, addr?.city].filter(Boolean).join(", ");
+      fullAddress = addr?.full_address ?? "";
     }
 
+    const durationText = booking?.service_duration_minutes
+      ? booking.service_duration_minutes >= 60 &&
+        booking.service_duration_minutes % 60 === 0
+        ? `${booking.service_duration_minutes / 60}h service`
+        : `${booking.service_duration_minutes}-min service`
+      : "";
+
     const bodyText =
-      [
-        booking?.service_duration_minutes ? `${booking.service_duration_minutes}-min service` : null,
-        booking?.scheduled_time_slot,
-        area,
-      ]
+      body.body ||
+      [durationText, booking?.scheduled_time_slot, area]
         .filter(Boolean)
-        .join(" · ") || "Tap to view details";
+        .join(" · ") ||
+      "Tap to view details";
+    const titleText =
+      body.title ||
+      (alertType === "broadcast" ? "New booking nearby" : "New booking assigned");
+
+    // Ring timeout for the native full-screen alert: the dispatcher expands the
+    // search radius after this many seconds, so the device simply stops ringing.
+    let timeoutSeconds = 60;
+    {
+      const { data: cfg } = await admin
+        .from("dispatch_config")
+        .select("radius_expand_after_seconds")
+        .limit(1)
+        .maybeSingle();
+      if (cfg?.radius_expand_after_seconds && cfg.radius_expand_after_seconds > 0) {
+        timeoutSeconds = cfg.radius_expand_after_seconds;
+      }
+    }
 
     if (!FIREBASE_SA_JSON) {
       console.warn("FIREBASE_SERVICE_ACCOUNT_JSON not set; skipping push send");
@@ -170,6 +203,27 @@ Deno.serve(async (req) => {
     const sa = JSON.parse(FIREBASE_SA_JSON) as ServiceAccount;
     const accessToken = await getAccessToken(sa);
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
+
+    // DATA-ONLY message. No `notification` block: the Android client
+    // (BadiyoMessagingService) builds the full-screen ringing notification
+    // itself, so the OS never posts a plain heads-up on our behalf.
+    // FCM data values must all be strings.
+    const dataPayload: Record<string, string> = {
+      type: alertType === "broadcast" ? "new_booking_broadcast" : "booking_assigned",
+      alert_type: alertType,
+      booking_id: body.booking_id,
+      expert_id: body.expert_id,
+      title: titleText,
+      body: bodyText,
+      address: fullAddress || area,
+      area,
+      duration: durationText,
+      slot: booking?.scheduled_time_slot ?? "",
+      lat: booking?.booking_lat != null ? String(booking.booking_lat) : "",
+      lng: booking?.booking_lng != null ? String(booking.booking_lng) : "",
+      timeout_seconds: String(timeoutSeconds),
+      route: alertType === "broadcast" ? "home" : `/booking/${body.booking_id}`,
+    };
 
     let sent = 0;
     const failedTokens: string[] = [];
@@ -183,14 +237,24 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           message: {
             token: t.fcm_token,
-            notification: { title: "New booking assigned", body: bodyText },
-            data: { booking_id: body.booking_id, type: "booking_assigned" },
-            android: { priority: "HIGH", notification: { sound: "default" } },
+            data: dataPayload,
+            android: {
+              priority: "HIGH",
+              ttl: `${timeoutSeconds}s`,
+              direct_boot_ok: true,
+            },
             apns: {
-              headers: { "apns-priority": "10" },
-              payload: { aps: { sound: "default", "content-available": 1 } },
+              headers: { "apns-priority": "10", "apns-push-type": "alert" },
+              payload: {
+                aps: {
+                  alert: { title: titleText, body: bodyText },
+                  sound: "default",
+                  "interruption-level": "time-sensitive",
+                },
+              },
             },
           },
+
         }),
       });
       if (res.ok) {
